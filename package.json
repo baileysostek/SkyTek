@@ -1,0 +1,19 @@
+{
+  "name": "skytek",
+  "version": "1.0.0",
+  "description": "This is the software used to author SkyTek Devices and manage product development and sales. Run 'npm help' for more information about specific actions",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/baileysostek/SkyTek.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/baileysostek/SkyTek/issues"
+  },
+  "homepage": "https://github.com/baileysostek/SkyTek#readme"
+}

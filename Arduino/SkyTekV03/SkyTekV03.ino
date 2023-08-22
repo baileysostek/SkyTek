@@ -240,9 +240,6 @@ void setup() {
 
   // Initialize variables for the Kalman Filter
   last_time = micros();
-
-  // Blink the led
-  blink(1000, 5, 255, 255, 255);
 }
 
 // Initialization functions for all of our different modules and things.
@@ -268,92 +265,92 @@ void loop() {
   dt = ((now - last_time) / 1000000.0);
   last_time = now;
 
-  // Do an action based on the current state of the flight computer
-  switch(state){
-    
-    case CONFIGURATION:{
-      bool parsing_command = false;
-      while(Serial.available()){
-        char command_character = (char)Serial.read();
-        if(!parsing_command){
-          if(command_character == COMMAND_START_CHARACTER){
-            command_message_index = 0;
-            parsing_command = true;
-            continue;
-          }
-        }else{
-          // Check if the current character is the "COMMAND_END_CHARACTER"
-          if(command_character == COMMAND_END_CHARACTER){
-            break;
-          }
-          // We recieved the start character
-          command_buffer[command_message_index] = command_character;
-          command_message_index++;
-          if(command_message_index >= COMMAND_BUFFER_SIZE){
-            Serial.println("Error: Command too long.");
-            parsing_command = false;
-            break;
-          }
+  // Process commands sent to the SkyTek Device
+  if(connected_to_cpu){
+    bool parsing_command = false;
+    while(Serial.available()){
+      char command_character = (char)Serial.read();
+      if(!parsing_command){
+        if(command_character == COMMAND_START_CHARACTER){
+          command_message_index = 0;
+          parsing_command = true;
+          continue;
+        }
+      }else{
+        // Check if the current character is the "COMMAND_END_CHARACTER"
+        if(command_character == COMMAND_END_CHARACTER){
+          break;
+        }
+        // We recieved the start character
+        command_buffer[command_message_index] = command_character;
+        command_message_index++;
+        if(command_message_index >= COMMAND_BUFFER_SIZE){
+          Serial.println("Error: Command too long.");
+          parsing_command = false;
+          break;
         }
       }
-      // Decode which command the user indicated
-      if(parsing_command){
-        Serial.println(command_buffer);
-        if (strcmp(command_buffer, "help") == 0) {
-          // List available commands
-        } else if (strcmp(command_buffer, "version") == 0) {
-          // List software Version
-          Serial.printf("Version:%s\n", VERSION);
-        } else if (strcmp(command_buffer, "connected") == 0) {
-          // List Connected Devices
-          Serial.println("Connected Devices:");
-          // GPS
-          Serial.printf("GPS Module: %s\n", has_gps ? "Connected" : "Disconnected");
-          // RADIO
-          Serial.printf("LoRa Module: %s\n", has_lora ? "Connected" : "Disconnected");
-          // SCREEN
-          Serial.printf("Screen Module: %s\n", has_screen ? "Connected" : "Disconnected");
-          // PYRO Channels
-          for(int i = 0; i < PYRO_CHANNELS; i++){
-          Serial.printf("Pyro Channel %d:\n", i);
-          }
-          // BMP
-          Serial.printf("Barometric Pressure Sensor: %s\n", has_bmp ? "Connected" : "Disconnected");
-          // ACCELEROMETER
-          Serial.printf("Accelerometer Accelerometer: %s\n", has_accel ? "Connected" : "Disconnected");
-
-        } else if (strcmp(command_buffer, "reconnect") == 0) {
-          // List Connected Devices
-          Serial.println("Attempting to reconnect to Devices:");
-          // GPS
-          Serial.printf("GPS Module: %s\n", has_gps ? "Connected" : "Disconnected");
-          // RADIO
-          Serial.printf("LoRa Module: %s\n", has_lora ? "Connected" : "Disconnected");
-          // SCREEN
-          Serial.printf("Screen Module: %s\n", has_screen ? "Connected" : "Disconnected");
-          // PYRO 1
-
-          // PYRO 2
-
-          // BMP
-          init_bmp();
-          Serial.printf("GPS Module: %s\n", has_bmp ? "Connected" : "Disconnected");
-          // ACCELEROMETER
-          Serial.printf("GPS Accelerometer: %s\n", has_accel ? "Connected" : "Disconnected");
-
-        } else if (strcmp(command_buffer, "gps") == 0) {
-          setState(SEARCH_GPS);
-        }else {
-          Serial.printf("Error: Command '%s' was not recognised.\n", command_buffer);
-        }
-      }
-      // Cleanup our buffers to do this again.
-      for(int i = 0; i < command_message_index; i++){
-        command_buffer[i] = '\0';
-      }
-      break;
     }
 
+    // Decode which command the user indicated
+    if(parsing_command){
+      Serial.println(command_buffer);
+      if (strcmp(command_buffer, "help") == 0) {
+        // List available commands
+      } else if (strcmp(command_buffer, "version") == 0) {
+        // List software Version
+        Serial.printf("Version:%s\n", VERSION);
+      } else if (strcmp(command_buffer, "connected") == 0) {
+        // List Connected Devices
+        Serial.println("Connected Devices:");
+        // GPS
+        Serial.printf("GPS Module: %s\n", has_gps ? "Connected" : "Disconnected");
+        // RADIO
+        Serial.printf("LoRa Module: %s\n", has_lora ? "Connected" : "Disconnected");
+        // SCREEN
+        Serial.printf("Screen Module: %s\n", has_screen ? "Connected" : "Disconnected");
+        // PYRO Channels
+        for(int i = 0; i < PYRO_CHANNELS; i++){
+        Serial.printf("Pyro Channel %d:\n", i);
+        }
+        // BMP
+        Serial.printf("Barometric Pressure Sensor: %s\n", has_bmp ? "Connected" : "Disconnected");
+        // ACCELEROMETER
+        Serial.printf("Accelerometer Accelerometer: %s\n", has_accel ? "Connected" : "Disconnected");
+
+      } else if (strcmp(command_buffer, "reconnect") == 0) {
+        // List Connected Devices
+        Serial.println("Attempting to reconnect to Devices:");
+        // GPS
+        Serial.printf("GPS Module: %s\n", has_gps ? "Connected" : "Disconnected");
+        // RADIO
+        Serial.printf("LoRa Module: %s\n", has_lora ? "Connected" : "Disconnected");
+        // SCREEN
+        Serial.printf("Screen Module: %s\n", has_screen ? "Connected" : "Disconnected");
+        // PYRO 1
+
+        // PYRO 2
+
+        // BMP
+        init_bmp();
+        Serial.printf("GPS Module: %s\n", has_bmp ? "Connected" : "Disconnected");
+        // ACCELEROMETER
+        Serial.printf("GPS Accelerometer: %s\n", has_accel ? "Connected" : "Disconnected");
+
+      } else if (strcmp(command_buffer, "gps") == 0) {
+        setState(SEARCH_GPS);
+      }else {
+        Serial.printf("Error: Command '%s' was not recognised.\n", command_buffer);
+      }
+    }
+    // Cleanup our buffers to do this again.
+    for(int i = 0; i < command_message_index; i++){
+      command_buffer[i] = '\0';
+    }
+  }
+
+  // Do an action based on the current state of the flight computer
+  switch(state){
     case BOOT:{
       // Maybe do an animation or display a bitmap.
 
@@ -380,8 +377,6 @@ void loop() {
       // If we are now in a state where we have GPS Lock
       if(gps_lock){
         setState(SELECT_ROCKET);
-      }else{
-        blink(100, 255, 0, 0);
       }
 
       break;
@@ -430,8 +425,17 @@ void heartbeat(unsigned long now){
   if((now - last_heartbeat) >= HEARTBEAT_TRANSMISSION_FREQUENCY){
     // Stor the current time so we can determine when to send the next message.
     last_heartbeat = micros();
-    // Flash the LED
-    blink(100, 255, 200, 200);
+
+    switch(state){
+      case SEARCH_GPS:{
+        char sattelites_clamped = min(4, max(1, gps_sattelites_in_view));
+        blink(sattelites_clamped * 100, sattelites_clamped, 255, 255, 255);
+      }
+      default:{
+        blink(100, 255, 255, 255);
+      }
+    }
+
     send_lora();
   }
 }
@@ -450,7 +454,7 @@ void setState(FlightComputerState new_state) {
       Serial.println("Connected to Computer!");
     }
     case SELECT_ROCKET:{
-      blink(100, 0, 0, 255);
+      // blink(100, 0, 0, 255);
     }
     default:{
       // Nothing
@@ -882,7 +886,8 @@ void blink(int duration, int blinks, char r, char g, char b){
   led_b = b;
   led_on_time = millis();
   led_off_time = led_on_time + duration;
-  led_blink_duration = duration / ((blinks * 2.0) - 1);
+  int blink_states = ((blinks * 2.0) - 1);
+  led_blink_duration = duration / blink_states;
 }
 
 void set_led(char r, char g, char b){
@@ -901,7 +906,7 @@ void update_led(){
     blank_led();
   } else {
     // Determine Blink Status
-    if(((led_off_time - now) / led_blink_duration) % 2 == 0){
+    if(((led_off_time - now) / led_blink_duration) % 2 == 1){
       blank_led();
     }else{
       set_led(led_r, led_g, led_b);
