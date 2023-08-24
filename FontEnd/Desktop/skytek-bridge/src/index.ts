@@ -6,7 +6,7 @@ declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
 
-import {SerialPort} from "serialport";
+import {SerialPort, ReadlineParser } from "serialport";
 
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -33,10 +33,14 @@ const createWindow = (): void => {
   mainWindow.webContents.openDevTools();
 
   SerialPort.list().then((ports) => {
-    console.log(ports);
+    for(let portInfo of ports){
+      const port = new SerialPort({ path:portInfo.path , baudRate:9600 });
+      const parser: ReadlineParser = new ReadlineParser();
+      port.pipe(parser)
+      parser.on('data', console.log)
+      port.write('/connected\n');
+    }
   })
-
-  console.log("Butts");
 };
 
 // This method will be called when Electron has finished
