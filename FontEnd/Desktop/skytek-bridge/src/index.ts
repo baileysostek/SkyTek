@@ -5,7 +5,8 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
-import discover from "./communication/SerialPortManager";
+import {discover, query} from "./communication/SerialPortManager";
+import { SkyTekDevice } from './types';
 
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -83,8 +84,12 @@ app.on('activate', () => {
 // code. You can also put them in separate files and import them here.
 
 // End of the file
-ipcMain.on("test", (event : any, request : any) => {
-  discover().then((data) => {
-    event.sender.send("test", data);
-  })
-});
+ipcMain.handle('/devices', async (event: any, someArgument: any) => {
+  const result = await discover(); // Get all devices.
+  return result;
+})
+
+ipcMain.handle('/query', async (event: any, args : [SkyTekDevice, string, ...any]) => {
+  const result = await query(...args); // Get all devices.
+  return result;
+})

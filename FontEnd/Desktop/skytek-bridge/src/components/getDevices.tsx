@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 // Material UI
 import Button from '@mui/material/Button';
@@ -7,41 +7,25 @@ import Box from '@mui/material/Box';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
-import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Avatar from '@mui/material/Avatar';
-import IconButton from '@mui/material/IconButton';
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import FolderIcon from '@mui/icons-material/Folder';
-import DeleteIcon from '@mui/icons-material/Delete';
 
-// Import our API to talk to the backend.
-const { ipcRenderer } = window.require('electron');
+// Import our store
+import { useStore } from 'zustand'
+import { useDeviceStore, getDevices, get } from '../store/DeviceStore';
 
 // Types
-import { SkyTekDevice } from '../types';
 
 interface Props {
   message: string;
 }
 
-
 const DeviceList = ({ message }: Props) => {
 
-  // State for this list
-  const [deviceList, setDeviceList] = useState<Array<any>>([]);
-
-  // Subscribe to our API Responses
-  useState(() => {
-    ipcRenderer.on("test", (event : any, data : any) => {
-      console.log("Data", data);
-      setDeviceList([data]);
-    });
-  });
+  const deviceStore = useStore(useDeviceStore);
 
   // Theme Info
   const Demo = styled('div')(({ theme }) => ({
@@ -49,18 +33,28 @@ const DeviceList = ({ message }: Props) => {
   }));
 
   // This function will populate the list with the passed template element
-  function populate(template: React.ReactElement) {
-    return deviceList.map((value) =>
-      React.cloneElement(template, {
-        key: value.id,
-      }),
+  function listDevices() {
+    return deviceStore?.devices?.map((value) =>
+      <ListItem onClick={() => {
+        get("/query", [value, "/skytek"]);
+      }}>
+        <ListItemAvatar>
+          <Avatar>
+            <FolderIcon />
+          </Avatar>
+        </ListItemAvatar>
+        <ListItemText
+          primary="Single-line item"
+          secondary={true ? 'Secondary text' : null}
+        />
+      </ListItem>,
     );
   }
 
   return (
     <div>
       <Button variant="contained" onClick={() => {
-        ipcRenderer.send("test", {});
+        getDevices();
       }}>
         Query Connected Devices
       </Button>
@@ -72,19 +66,7 @@ const DeviceList = ({ message }: Props) => {
             </Typography>
             <Demo>
               <List dense={false}>
-                {populate(
-                  <ListItem>
-                    <ListItemAvatar>
-                      <Avatar>
-                        <FolderIcon />
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary="Single-line item"
-                      secondary={true ? 'Secondary text' : null}
-                    />
-                  </ListItem>,
-                )}
+                {listDevices()}
               </List>
             </Demo>
           </Grid>

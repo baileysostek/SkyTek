@@ -2,17 +2,12 @@ import {SerialPort, ReadlineParser } from "serialport";
 
 export class SkyTekDevice {
   name : string;
-  id   : string;
-  port : SerialPort;
+  port : string;
   capabilities : Array<SkyTekCapability>[]; 
 
   // Things the device can do
-  constructor(){
-
-  }
-
-  test : () => {
-    
+  constructor(port : string){
+    this.port = port;
   }
 }
 
@@ -35,4 +30,22 @@ export class SkyTekCapability{
     this.name = capability_name;
 
   }
+}
+
+// Errors
+export class SkyTekError{
+  // Properties
+  readonly error_type : SkyTekErrorType;
+  readonly error_name : string;
+  readonly error_description : string;
+
+  constructor(error_type : SkyTekErrorType, error_name : string, error_description : string){
+    this.error_type = error_type;
+    this.error_name = error_name;
+    this.error_description = error_description;
+  }
+}
+
+export enum SkyTekErrorType{
+  QUERY_TIMEOUT, 
 }
