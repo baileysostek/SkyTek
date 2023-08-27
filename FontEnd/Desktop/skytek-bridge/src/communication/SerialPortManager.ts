@@ -5,7 +5,7 @@ import { SkyTekDevice } from "../types";
 // Create a Map of ports to Skytek Devicess
 const devices = new Map<string, SkyTekDevice>();
 
-export default function discover():  Promise<SkyTekDevice> {
+export default function discover():  Promise<PortInfo> {
   // We dont know how long this function will take to return, so we will return a promise that we can then observe the lifecycle of.
   return new Promise((resolve, reject) => {
     // Request a list of all serail ports
@@ -16,7 +16,9 @@ export default function discover():  Promise<SkyTekDevice> {
         const port = new SerialPort({ path:portInfo.path , baudRate:9600 });
         const parser: ReadlineParser = new ReadlineParser();
         port.pipe(parser);
-        parser.on('data', console.log);
+        parser.on('data', (data) => {
+          console.log(data);
+        });
         port.write('/connected\n');
 
         // Here we do our SkyTek Handshake to confirm that we are talking with a skytek device.
@@ -28,7 +30,7 @@ export default function discover():  Promise<SkyTekDevice> {
         devices.set(portInfo.path, device);
 
         //Return this new device.
-        resolve(device);
+        resolve(portInfo);
       }
     }).catch((error) => {
       reject(error);
