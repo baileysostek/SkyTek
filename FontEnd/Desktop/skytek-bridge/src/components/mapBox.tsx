@@ -12,17 +12,23 @@ interface Props {
   height: number;
 }
 
+export type LatLon = {
+    lat:number,
+    lon:number
+}
+
 const MapBox = ({ height }: Props) => {
 
   const [count, setCount] = useState(0);
+  const [position, setPosition] = useState<LatLon>({lat:42.345280, lon:-71.552193});
 
   return (
-    <Map center={[71, -42]} zoom={12} width={600} height={400}>
-        <Marker anchor={[71, -42]} payload={1} onClick={({ event, anchor, payload }) => {}} />
+    <Map center={[position.lat, position.lon]} zoom={12} width={600} height={400}>
+        <Marker anchor={[position.lat, position.lon]} payload={1} onClick={({ event, anchor, payload }) => {}} />
     
-        <Overlay anchor={[71, -42]} offset={[120, 79]}>
+        {/* <Overlay anchor={[position.lat, position.lon]} offset={[120, 79]}>
             <img src='pigeon.jpg' width={240} height={158} alt='' />
-        </Overlay>
+        </Overlay> */}
     </Map>
   );
 };

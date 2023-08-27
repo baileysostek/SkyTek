@@ -11,7 +11,8 @@
 #include <EEPROM.h>
 
 // SkyTek is a a closed source project created by Bailey Sostek in May of 2023
-#define VERSION "0.3"
+#define SKYTEK_API_VERSION "1.0"
+#define VERSION "0.3" // Board Software Version
 
 // Define our Serial speeds.
 #define HOST_SERIAL_SPEED 115200
@@ -67,6 +68,7 @@ enum FixQuality {
 #define LORA_RADIO_FREQUENCY 915E6
 char lora_packet[11 + 1 + 11] = {'\0'}; //-000.000000
 unsigned long last_heartbeat = 0;
+unsigned int heartbeats = 0;
 
 // PYRO Channels
 #define PYRO_CHANNELS 3 // 0 - Main | 1 - Drogue | 2 - Alternate
@@ -297,9 +299,12 @@ void loop() {
       Serial.println(command_buffer);
       if (strcmp(command_buffer, "help") == 0) {
         // List available commands
+      } else if (strcmp(command_buffer, "skytek") == 0) {
+        // List software Version
+        Serial.printf("SkyTek API Version:%s\n", SKYTEK_API_VERSION);
       } else if (strcmp(command_buffer, "version") == 0) {
         // List software Version
-        Serial.printf("Version:%s\n", VERSION);
+        Serial.printf("Board Software Version:%s\n", VERSION);
       } else if (strcmp(command_buffer, "connected") == 0) {
         // List Connected Devices
         Serial.println("Connected Devices:");
@@ -338,7 +343,7 @@ void loop() {
         Serial.printf("GPS Accelerometer: %s\n", has_accel ? "Connected" : "Disconnected");
 
       } else if (strcmp(command_buffer, "gps") == 0) {
-        setState(SEARCH_GPS);
+        Serial.printf("{lat:%f,lng:%f}\n" , gps_lat, gps_lng);
       }else {
         Serial.printf("Error: Command '%s' was not recognised.\n", command_buffer);
       }
@@ -376,6 +381,7 @@ void loop() {
 
       // If we are now in a state where we have GPS Lock
       if(gps_lock){
+        // Now that we have GPS Lock we need to Emit the event that states we have GPS lock.
         setState(SELECT_ROCKET);
       }
 
@@ -438,7 +444,17 @@ void heartbeat(unsigned long now){
       }
     }
 
+    // Send our LORA Data
     send_lora();
+
+    // If connected to a computer also echo the packet over serial.
+    if(connected_to_cpu){
+      // Send Heartbeat over serial as well.
+      Serial.printf("{id:%d,msg:%d}\n", 1, heartbeats);
+    }
+
+    // Increment the Heartbeat Counter
+    heartbeats++;
   }
 }
 
@@ -519,30 +535,30 @@ void process_gps_message(char* gps_message){
   char* nema_sentence = nema_op_buffer;
   char* nema_data     = gps_message + 5;
 
-  Serial.println(nema_sentence);
-  Serial.println(nema_data);
+  // Serial.println(nema_sentence);
+  // Serial.println(nema_data);
 
   // Since we cant switch on strings we do this garbage.
   if(is_valid_message(nema_sentence, "GGA", nema_data, 14)){ // Global Positioning System Fix Data
     // Determine if we have a GPS FIX or not.
     int fix_level = gps_parse_int(nema_data, 6);
     gps_lock = (fix_level >= 1);
-    Serial.printf("Lock:%d\n", fix_level);
+    // Serial.printf("Lock:%d\n", fix_level);
 
     // Calculate the number of visible GPS sattelites.
     gps_sattelites_in_view = gps_parse_int(nema_data, 7);
-    Serial.printf("Sattelites:%d\n", gps_sattelites_in_view);
+    // Serial.printf("Sattelites:%d\n", gps_sattelites_in_view);
 
     if(gps_lock){
       char degree_minute_buffer[NEMA_ARGUMENT_BUFFER_SIZE];
 
       // N or S
       gps_parse_string(nema_data, 2);
-      Serial.printf("Lat1:%s\n" , nema_argument_buffer);
+      // Serial.printf("Lat1:%s\n" , nema_argument_buffer);
       strcpy(degree_minute_buffer, nema_argument_buffer);
-      Serial.printf("Lat2:%s\n" , degree_minute_buffer);
+      // Serial.printf("Lat2:%s\n" , degree_minute_buffer);
       gps_parse_string(nema_data, 3);
-      Serial.printf("Lat3:%s\n" , nema_argument_buffer);
+      // Serial.printf("Lat3:%s\n" , nema_argument_buffer);
       gps_lat = gps_to_decimal_degrees(degree_minute_buffer, nema_argument_buffer);
 
       // E or W
@@ -551,8 +567,8 @@ void process_gps_message(char* gps_message){
       gps_parse_string(nema_data, 5);
       gps_lng = gps_to_decimal_degrees(degree_minute_buffer, nema_argument_buffer);
 
-      Serial.printf("Lat%f:\n" , gps_lat);
-      Serial.printf("Lng%f:\n" , gps_lng);
+      // Serial.printf("Lat%f:\n" , gps_lat);
+      // Serial.printf("Lng%f:\n" , gps_lng);
     }
 
     // Calculate the Altitude.
@@ -568,12 +584,12 @@ void process_gps_message(char* gps_message){
       char degree_minute_buffer[NEMA_ARGUMENT_BUFFER_SIZE];
 
       gps_parse_string(nema_data, 1);
-      Serial.printf("Lat1:%s\n" , nema_argument_buffer);
+      // Serial.printf("Lat1:%s\n" , nema_argument_buffer);
       strcpy(degree_minute_buffer, nema_argument_buffer);
 
-      Serial.printf("Lat2:%s\n" , degree_minute_buffer);
+      // Serial.printf("Lat2:%s\n" , degree_minute_buffer);
       gps_parse_string(nema_data, 2); // N or S
-      Serial.printf("Lat3:%s\n" , nema_argument_buffer);
+      // Serial.printf("Lat3:%s\n" , nema_argument_buffer);
       gps_lat = gps_to_decimal_degrees(degree_minute_buffer, nema_argument_buffer);
 
       gps_parse_string(nema_data, 3);
@@ -581,8 +597,8 @@ void process_gps_message(char* gps_message){
       gps_parse_string(nema_data, 4); // E or W
       gps_lng = gps_to_decimal_degrees(degree_minute_buffer, nema_argument_buffer);
 
-      Serial.printf("Lat%f:\n" , gps_lat);
-      Serial.printf("Lng%f:\n" , gps_lng);
+      // Serial.printf("Lat%f:\n" , gps_lat);
+      // Serial.printf("Lng%f:\n" , gps_lng);
     }
 
     return;
@@ -605,7 +621,7 @@ float gps_to_decimal_degrees(char* nema_position, char* quadrant){
   float pos = 0.0;
 
   int minute_characters = index_of(nema_position, '.');
-  Serial.printf("Offset to '.':%d\n", minute_characters);
+  // Serial.printf("Offset to '.':%d\n", minute_characters);
   // if(minute_characters != 4 || minute_characters != 5){
   //   return 0.0; // Invalid
   // }
@@ -618,11 +634,11 @@ float gps_to_decimal_degrees(char* nema_position, char* quadrant){
   degrees[degree_array_size - 1] = '\0';
   char* minutes = nema_position + minute_index_start; // Offset by index of '.'
 
-  Serial.printf("degrees:%s minutes:%s\n", degrees , minutes);
-  Serial.printf("degrees:%f,minutes:%f\n", atof(degrees), atof(minutes));
+  // Serial.printf("degrees:%s minutes:%s\n", degrees , minutes);
+  // Serial.printf("degrees:%f,minutes:%f\n", atof(degrees), atof(minutes));
 
   pos = atof(degrees) + (atof(minutes) / 60.0);
-  Serial.printf("Pos:%f\n", pos);
+  // Serial.printf("Pos:%f\n", pos);
   
   return pos;
 }
