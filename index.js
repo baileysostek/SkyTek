@@ -1,5 +1,4 @@
-// Imports
-const { exit } = require("process");
+// Requirements
 const readline = require("readline");
 const rl = readline.createInterface({
     input:process.stdin,
@@ -27,7 +26,10 @@ const COMMANDS = {
         }
     },
     "products":{
-        "description":"Lists all of the available products that we currently produce."
+        "description":"Lists all of the available products that we currently produce.",
+        "command": () => {
+            
+        }
     },
     "exit":{
         "description":"Exits the software",

@@ -429,10 +429,12 @@ void heartbeat(unsigned long now){
     switch(state){
       case SEARCH_GPS:{
         char sattelites_clamped = min(4, max(1, gps_sattelites_in_view));
-        blink(sattelites_clamped * 100, sattelites_clamped, 255, 255, 255);
+        blink(sattelites_clamped * 100, sattelites_clamped, 0, 0, 255);
+        break;
       }
       default:{
         blink(100, 255, 255, 255);
+        break;
       }
     }
 

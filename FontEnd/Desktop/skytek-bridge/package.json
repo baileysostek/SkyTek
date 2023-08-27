@@ -42,10 +42,17 @@
     "typescript": "~4.5.4"
   },
   "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@fontsource/roboto": "^5.0.8",
+    "@mui/icons-material": "^5.14.6",
+    "@mui/material": "^5.14.6",
     "electron-squirrel-startup": "^1.0.0",
+    "pigeon-maps": "^0.21.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "serialport": "^11.0.1",
+    "svg-react-loader": "^0.4.6",
     "tableify": "^1.1.1"
   }
 }
