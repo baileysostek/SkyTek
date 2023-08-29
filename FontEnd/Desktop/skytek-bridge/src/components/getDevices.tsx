@@ -34,8 +34,8 @@ const DeviceList = ({ message }: Props) => {
 
   // This function will populate the list with the passed template element
   function listDevices() {
-    return deviceStore?.devices?.map((value) =>
-      <ListItem onClick={() => {
+    return deviceStore?.devices?.map((value, index) =>
+      <ListItem key={index} onClick={() => {
         get("/query", [value, "/skytek"]);
       }}>
         <ListItemAvatar>

@@ -162,7 +162,7 @@ enum FlightComputerState {
 
 // Define our initial flight computer state. Initial state is BOOT
 FlightComputerState state = BOOT;
-bool connected_to_cpu = false;
+bool connected_to_cpu = true;
 
 void setup() {
   // Initialize our primary serial communication
@@ -182,11 +182,9 @@ void setup() {
   Serial.printf("SkyTek controller Version:%s\n", VERSION);
 
   // Here we check to see if we have a serial connection on this port. If we do we put the controller into a settings mode that allows it to process commands.
-  if(Serial){
-    connected_to_cpu = true;
-  }else{
-    setState(BOOT);
-  }
+  // if(Serial){
+  //   connected_to_cpu = true;
+  // }
 
   // Start by initializing our display
   if(display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
@@ -296,7 +294,6 @@ void loop() {
 
     // Decode which command the user indicated
     if(parsing_command){
-      Serial.println(command_buffer);
       if (strcmp(command_buffer, "help") == 0) {
         // List available commands
       } else if (strcmp(command_buffer, "skytek") == 0) {

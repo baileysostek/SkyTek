@@ -48,3 +48,18 @@ export function get(route:string, data:any = null, duration:number = QUERY_TIMEO
     });
   });
 }
+
+export function query(data:any = null, duration:number = QUERY_TIMEOUT) : Promise<any> {
+  return new Promise((resolve, reject) => {
+    // Setup a callback that will terminate this promise after the QUERY_TIMEOUT has elapsed.
+    let timeout_id = setTimeout(() => {
+      reject(); // TODO: Query Error
+    }, duration);
+
+    // Here is where we send the event.
+    ipcRenderer.invoke("/query", data).then((result : any) => {
+      clearTimeout(timeout_id);
+      resolve(result);
+    });
+  });
+}

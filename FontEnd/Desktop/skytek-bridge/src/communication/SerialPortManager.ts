@@ -5,10 +5,16 @@ import { SkyTekDevice } from "../types";
 // This is a map of values we will return
 let devices = new Map<string, ControlledSkyTekDevice>();
 
-type ControlledSkyTekDevice {
+type ControlledSkyTekDevice = {
   port : SerialPort;
   parser : ReadlineParser;
   device : SkyTekDevice;
+  callback : (data : string) => void | null;
+}
+
+type SerialResponse = {
+  id:string,
+  data:string,
 }
 
 export function discover():  Promise<Array<SkyTekDevice>> {
@@ -40,6 +46,12 @@ export function discover():  Promise<Array<SkyTekDevice>> {
         port.pipe(parser);
         parser.on('data', (data) => {
           console.log(data);
+          if(devices.has(portPath)){
+            let device = devices.get(portPath);
+            if(device.callback){
+              device.callback(data);
+            }
+          }
         });
 
         // Here we do our SkyTek Handshake to confirm that we are talking with a skytek device.
@@ -51,7 +63,8 @@ export function discover():  Promise<Array<SkyTekDevice>> {
         devices.set(portPath, {
           port : port,
           parser : parser,
-          device : device
+          device : device,
+          callback : null,
         });
       }
 
@@ -74,25 +87,28 @@ export function discover():  Promise<Array<SkyTekDevice>> {
 /**
  * This function allows someone to write to the standard in (stdin) of a Serial port and listen for the response.
  */
-export function query(device : SkyTekDevice, request : string, args : any = []): Promise<{}> {
+export function query(skyTekDevice : SkyTekDevice, request : string, args : any = []): Promise<string> {
   return new Promise((resolve, reject) => {
-    console.log(device, request, ...args);
-    if(devices.has(device.port)){
-      let port = devices.get(device.port).port; // Get our real serial port
+    console.log(skyTekDevice, request, ...args);
+    if(devices.has(skyTekDevice.port)){
+      let device = devices.get(skyTekDevice.port);
+      let port = device.port; // Get our real serial port
 
-      port.write("/gps", function(err) {
+      console.log('Writing Message:', request);
+      port.write(request, function(err) {
         if (err) {
-          return console.log('Error on write: ', err.message)
+          console.log('Error: Could not write message.');
+          return reject(err?.message);
         }
-        console.log('message written')
-      })
-
-      const parser: ReadlineParser = new ReadlineParser();
-      port.pipe(parser);
-      parser.on('data', (data) => {
-        console.log(data);
+        console.log('message written');
+        device.callback = (data : string) => {
+          resolve(data);
+          delete device.callback;
+        }
       });
+
+    }else{
+      resolve("");
     }
-    resolve({});
   });
 }
