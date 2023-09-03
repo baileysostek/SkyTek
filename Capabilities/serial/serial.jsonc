@@ -1,0 +1,14 @@
+{
+    // Metadata
+    "name":"Serial",
+    "description": "The Serial component allows a SkyTek device to communicate over serial.",
+    "command":"serial",
+    "data":[
+        {"name":"lat", "type":"number"},
+        {"name":"lon", "type":"number"},
+        {"name":"accuracy", "type":"number"},
+        {"name":"altitude", "type":"number"},
+        {"name":"sattelites", "type":"number"}
+    ],
+    "interface":"QUERY"
+}

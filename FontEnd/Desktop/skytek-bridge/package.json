@@ -27,6 +27,7 @@
     "@electron-forge/plugin-webpack": "^6.4.1",
     "@types/react": "^18.2.21",
     "@types/react-dom": "^18.2.7",
+    "@types/uuid": "^9.0.3",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
     "@vercel/webpack-asset-relocator-loader": "1.7.3",
@@ -51,9 +52,11 @@
     "pigeon-maps": "^0.21.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-virtualized-auto-sizer": "^1.0.20",
     "serialport": "^11.0.1",
-    "svg-react-loader": "^0.4.6",
+    "svg-react-loader": "^0.4.0",
     "tableify": "^1.1.1",
+    "uuid": "^9.0.0",
     "zustand": "^4.4.1"
   }
 }

@@ -34,32 +34,33 @@ export function getDevices() : Promise<Array<SkyTekDevice>>{
   });
 }
 
-export function get(route:string, data:any = null, duration:number = QUERY_TIMEOUT) : Promise<any> {
-  return new Promise((resolve, reject) => {
-    // Setup a callback that will terminate this promise after the QUERY_TIMEOUT has elapsed.
-    let timeout_id = setTimeout(() => {
-      reject(); // TODO: Query Error
-    }, duration);
+function timeout(prom : Promise<any>, time : number) : Promise<number> {
+	let timer : any;
+	return Promise.race([
+		prom,
+		new Promise((_r, rej) => timer = setTimeout(rej, time))
+	]).finally(() => clearTimeout(timer));
+}
 
+export function get(route:string, data:any = null, duration:number = QUERY_TIMEOUT) : Promise<any> {
+  return timeout(new Promise((resolve, reject) => {
     // Here is where we send the event.
     ipcRenderer.invoke(route, data).then((result : any) => {
-      clearTimeout(timeout_id);
       resolve(result);
+    }).catch((err) => {
+      reject(err);
     });
-  });
+  }), duration);
 }
 
 export function query(data:any = null, duration:number = QUERY_TIMEOUT) : Promise<any> {
-  return new Promise((resolve, reject) => {
-    // Setup a callback that will terminate this promise after the QUERY_TIMEOUT has elapsed.
-    let timeout_id = setTimeout(() => {
-      reject(); // TODO: Query Error
-    }, duration);
-
+  return timeout(new Promise((resolve, reject) => {
     // Here is where we send the event.
     ipcRenderer.invoke("/query", data).then((result : any) => {
-      clearTimeout(timeout_id);
       resolve(result);
-    });
-  });
+    }).catch((error) => {
+      console.log("Error", error)
+      reject(error)
+    })
+  }), duration);
 }

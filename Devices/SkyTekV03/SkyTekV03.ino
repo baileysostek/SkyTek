@@ -27,6 +27,7 @@ char led_r = 255;
 char led_g = 255;
 char led_b = 255;
 
+// Generated from Serial component
 // Define our configuration command characters
 #define COMMAND_START_CHARACTER '/'
 #define COMMAND_END_CHARACTER '\n'
@@ -34,6 +35,12 @@ char led_b = 255;
 // This buffer stores commands that a user might send to the controller.
 char command_buffer[COMMAND_BUFFER_SIZE] = {'\0'};
 int command_message_index = 0; 
+
+// UUID for message response handling
+#define UUID_COMMAND_DELIMTER ':'
+#define UUID_SIZE 32
+char uuid_buffer[UUID_SIZE] = {'\0'};
+
 
 // set this to the hardware serial port you wish to use
 #define NEMA_GPS Serial2       // Hardware Serial 2 is used for the NEMA GPS reciever.
@@ -267,88 +274,7 @@ void loop() {
 
   // Process commands sent to the SkyTek Device
   if(connected_to_cpu){
-    bool parsing_command = false;
-    while(Serial.available()){
-      char command_character = (char)Serial.read();
-      if(!parsing_command){
-        if(command_character == COMMAND_START_CHARACTER){
-          command_message_index = 0;
-          parsing_command = true;
-          continue;
-        }
-      }else{
-        // Check if the current character is the "COMMAND_END_CHARACTER"
-        if(command_character == COMMAND_END_CHARACTER){
-          break;
-        }
-        // We recieved the start character
-        command_buffer[command_message_index] = command_character;
-        command_message_index++;
-        if(command_message_index >= COMMAND_BUFFER_SIZE){
-          Serial.println("Error: Command too long.");
-          parsing_command = false;
-          break;
-        }
-      }
-    }
-
-    // Decode which command the user indicated
-    if(parsing_command){
-      if (strcmp(command_buffer, "help") == 0) {
-        // List available commands
-      } else if (strcmp(command_buffer, "skytek") == 0) {
-        // List software Version
-        Serial.printf("SkyTek API Version:%s\n", SKYTEK_API_VERSION);
-      } else if (strcmp(command_buffer, "version") == 0) {
-        // List software Version
-        Serial.printf("Board Software Version:%s\n", VERSION);
-      } else if (strcmp(command_buffer, "connected") == 0) {
-        // List Connected Devices
-        Serial.println("Connected Devices:");
-        // GPS
-        Serial.printf("GPS Module: %s\n", has_gps ? "Connected" : "Disconnected");
-        // RADIO
-        Serial.printf("LoRa Module: %s\n", has_lora ? "Connected" : "Disconnected");
-        // SCREEN
-        Serial.printf("Screen Module: %s\n", has_screen ? "Connected" : "Disconnected");
-        // PYRO Channels
-        for(int i = 0; i < PYRO_CHANNELS; i++){
-        Serial.printf("Pyro Channel %d:\n", i);
-        }
-        // BMP
-        Serial.printf("Barometric Pressure Sensor: %s\n", has_bmp ? "Connected" : "Disconnected");
-        // ACCELEROMETER
-        Serial.printf("Accelerometer Accelerometer: %s\n", has_accel ? "Connected" : "Disconnected");
-
-      } else if (strcmp(command_buffer, "reconnect") == 0) {
-        // List Connected Devices
-        Serial.println("Attempting to reconnect to Devices:");
-        // GPS
-        Serial.printf("GPS Module: %s\n", has_gps ? "Connected" : "Disconnected");
-        // RADIO
-        Serial.printf("LoRa Module: %s\n", has_lora ? "Connected" : "Disconnected");
-        // SCREEN
-        Serial.printf("Screen Module: %s\n", has_screen ? "Connected" : "Disconnected");
-        // PYRO 1
-
-        // PYRO 2
-
-        // BMP
-        init_bmp();
-        Serial.printf("GPS Module: %s\n", has_bmp ? "Connected" : "Disconnected");
-        // ACCELEROMETER
-        Serial.printf("GPS Accelerometer: %s\n", has_accel ? "Connected" : "Disconnected");
-
-      } else if (strcmp(command_buffer, "gps") == 0) {
-        Serial.printf("{lat:%f,lng:%f}\n" , gps_lat, gps_lng);
-      }else {
-        Serial.printf("Error: Command '%s' was not recognised.\n", command_buffer);
-      }
-    }
-    // Cleanup our buffers to do this again.
-    for(int i = 0; i < command_message_index; i++){
-      command_buffer[i] = '\0';
-    }
+    parse_serial_command();
   }
 
   // Do an action based on the current state of the flight computer
@@ -406,7 +332,7 @@ void loop() {
 
   // Independant of Mode send the radio pings.
 
-  // Beat if it is time to
+  // Heartbeat if it is time to
   heartbeat(now);
 
 
@@ -478,8 +404,123 @@ void setState(FlightComputerState new_state) {
 }
 
 // Command handler to read and process the incomming serial commands from the SkyTek Flight Software.
-void process_serial_command(){
+void parse_serial_command(){
+  bool parsing_command = false;
+  while(Serial.available()){
+    char command_character = (char)Serial.read();
+    if(!parsing_command){
+      if(command_character == COMMAND_START_CHARACTER){
+        // We know that we are now either parsing command data or a UUID.
+        command_message_index = 0;
+        parsing_command = true;
 
+        while(Serial.available()){
+          char uuid_character = (char)Serial.read();
+          // Check that we have not hit the escape character.
+          if(uuid_character == UUID_COMMAND_DELIMTER){
+            // We have a real UUID so clear out our command buffer.
+            for(int i = 0; i < command_message_index; i++){
+              command_buffer[i] = '\0'; // Clear the command buffer
+            }
+            command_message_index = 0;
+            break; // We have finished parsing our id. Up to 32 characters.
+          }
+          if(uuid_character == COMMAND_END_CHARACTER){
+            // We did not get a UUID. clear out the UUID buffer
+            for(int i = 0; i < command_message_index; i++){
+              uuid_buffer[i] = '\0'; // Clear the command buffer
+            }
+            return process_serial_command();
+          }
+          
+          // Process the UUID
+          if(command_message_index < UUID_SIZE){
+            uuid_buffer[command_message_index] = uuid_character;
+            command_buffer[command_message_index] = uuid_character;
+            command_message_index++;
+          }else{
+            break;
+          }
+        }
+        continue;
+      }
+    }else{
+      // Check if the current character is the "COMMAND_END_CHARACTER"
+      if(command_character == COMMAND_END_CHARACTER){
+        break;
+      }
+      // We recieved the start character
+      command_buffer[command_message_index] = command_character;
+      command_message_index++;
+      if(command_message_index >= COMMAND_BUFFER_SIZE){
+        Serial.println("Error: Command too long.");
+        parsing_command = false;
+        break;
+      }
+    }
+  }
+  // Any Components which define messages with a "QUERY" interface will have their query code inserted below.
+  // Decode which command the user indicated
+  if(parsing_command){
+    process_serial_command();
+  }
+}
+
+void process_serial_command(){
+  if (strcmp(command_buffer, "help") == 0) {
+    // List available commands
+  } else if (strcmp(command_buffer, "skytek") == 0) {
+    // List software Version
+    Serial.printf("SkyTek API Version:%s\n", SKYTEK_API_VERSION);
+  } else if (strcmp(command_buffer, "version") == 0) {
+    // List software Version
+    Serial.printf("Board Software Version:%s\n", VERSION);
+  } else if (strcmp(command_buffer, "connected") == 0) {
+    // List Connected Devices
+    Serial.println("Connected Devices:");
+    // GPS
+    Serial.printf("GPS Module: %s\n", has_gps ? "Connected" : "Disconnected");
+    // RADIO
+    Serial.printf("LoRa Module: %s\n", has_lora ? "Connected" : "Disconnected");
+    // SCREEN
+    Serial.printf("Screen Module: %s\n", has_screen ? "Connected" : "Disconnected");
+    // PYRO Channels
+    for(int i = 0; i < PYRO_CHANNELS; i++){
+    Serial.printf("Pyro Channel %d:\n", i);
+    }
+    // BMP
+    Serial.printf("Barometric Pressure Sensor: %s\n", has_bmp ? "Connected" : "Disconnected");
+    // ACCELEROMETER
+    Serial.printf("Accelerometer Accelerometer: %s\n", has_accel ? "Connected" : "Disconnected");
+
+  } else if (strcmp(command_buffer, "reconnect") == 0) {
+    // List Connected Devices
+    Serial.println("Attempting to reconnect to Devices:");
+    // GPS
+    Serial.printf("GPS Module: %s\n", has_gps ? "Connected" : "Disconnected");
+    // RADIO
+    Serial.printf("LoRa Module: %s\n", has_lora ? "Connected" : "Disconnected");
+    // SCREEN
+    Serial.printf("Screen Module: %s\n", has_screen ? "Connected" : "Disconnected");
+    // PYRO 1
+
+    // PYRO 2
+
+    // BMP
+    init_bmp();
+    Serial.printf("GPS Module: %s\n", has_bmp ? "Connected" : "Disconnected");
+    // ACCELEROMETER
+    Serial.printf("GPS Accelerometer: %s\n", has_accel ? "Connected" : "Disconnected");
+
+  } else if (strcmp(command_buffer, "gps") == 0) {
+    Serial.printf("{\"id\":\"%s\",\"lat\":%f,\"lng\":%f}\n", uuid_buffer, gps_lat, gps_lng);
+  }else {
+    Serial.printf("Error: Command '%s' was not recognised.\n", command_buffer);
+  }
+  // Cleanup our buffers to do this again.
+  for(int i = 0; i < command_message_index; i++){
+    command_buffer[i] = '\0';
+  }
 }
 
 // This is a blocking function which reads in all incomming data from the UART connected to the NEMA GPS board and updates our lat and lng positions.

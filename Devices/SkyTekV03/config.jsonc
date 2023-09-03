@@ -1,0 +1,9 @@
+{
+    "name":"SkyTek GPS Transmitter",
+    "capabilities":[
+        "gps",
+        "lora",
+        "rgb_led",
+        "battery"
+    ]
+}

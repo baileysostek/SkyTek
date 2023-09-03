@@ -5,7 +5,7 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
-import {discover, query} from "./communication/SerialPortManager";
+import {discover, query} from "./api/server";
 import { SkyTekDevice } from './types';
 
 

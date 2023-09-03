@@ -17,6 +17,9 @@ import FolderIcon from '@mui/icons-material/Folder';
 import { useStore } from 'zustand'
 import { useDeviceStore, getDevices, get } from '../store/DeviceStore';
 
+// UUID
+import { v4 as uuidv4 } from 'uuid';
+
 // Types
 
 interface Props {
@@ -34,9 +37,13 @@ const DeviceList = ({ message }: Props) => {
 
   // This function will populate the list with the passed template element
   function listDevices() {
-    return deviceStore?.devices?.map((value, index) =>
+    return deviceStore?.devices?.map((item, index) =>
       <ListItem key={index} onClick={() => {
-        get("/query", [value, "/skytek"]);
+        get("/query", [item, "/skytek"]).then((data) => {
+          console.log("Data", data);
+        }).catch((err) => {
+          console.log("Caught Error", err);
+        })
       }}>
         <ListItemAvatar>
           <Avatar>
@@ -44,8 +51,8 @@ const DeviceList = ({ message }: Props) => {
           </Avatar>
         </ListItemAvatar>
         <ListItemText
-          primary="Single-line item"
-          secondary={true ? 'Secondary text' : null}
+          primary={item.port}
+          secondary={true ? uuidv4() : null}
         />
       </ListItem>,
     );
@@ -54,7 +61,11 @@ const DeviceList = ({ message }: Props) => {
   return (
     <div>
       <Button variant="contained" onClick={() => {
-        getDevices();
+        getDevices().then((data) => {
+          console.log("Data", data);
+        }).catch((err) => {
+          console.log("Caught Error", err);
+        });
       }}>
         Query Connected Devices
       </Button>
@@ -62,7 +73,6 @@ const DeviceList = ({ message }: Props) => {
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <Typography sx={{ mt: 4, mb: 2 }} variant="h6" component="div">
-              Avatar with text
             </Typography>
             <Demo>
               <List dense={false}>

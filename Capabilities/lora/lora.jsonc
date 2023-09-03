@@ -1,0 +1,20 @@
+{
+    // Metadata
+    "name":"LoRa",
+    "description": "Long Range Radio transciver transmitting at 915mhz.",
+    "command":"lora",
+    "data":[
+        {"name":"rssi", "type":"number"},
+        {"name":"heartbeat", "type":"number"},
+        {"name":"message", "type":"string", "length":"256"},
+    ],
+    "modifiers":{
+        "heartbeat":{
+            "type":"WATCHDOG",
+            "args":{
+                "last_transmit":2000
+            }
+        }
+    },
+    "interface":"QUERY"
+}

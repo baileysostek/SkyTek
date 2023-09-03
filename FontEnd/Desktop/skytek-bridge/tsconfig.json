@@ -6,6 +6,9 @@
     "allowJs": true,
     "module": "commonjs",
     "skipLibCheck": true,
+    "lib": [
+      "ES2021.String"
+    ],
     "esModuleInterop": true,
     "noImplicitAny": true,
     "sourceMap": true,

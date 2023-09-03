@@ -1,0 +1,14 @@
+{
+    // Metadata
+    "name":"GPS",
+    "description": "The GPS component allows a SkyTek device to localize itself in space.",
+    "command":"gps",
+    "data":[
+        {"name":"lat", "type":"number"},
+        {"name":"lon", "type":"number"},
+        {"name":"accuracy", "type":"number"},
+        {"name":"altitude", "type":"number"},
+        {"name":"sattelites", "type":"number"}
+    ],
+    "interface":"QUERY"
+}
