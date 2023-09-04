@@ -10,7 +10,10 @@ import { osm } from 'pigeon-maps/providers'
 
 // Import our store
 import { useStore } from 'zustand'
-import { useDeviceStore, getDevices, query } from '../store/DeviceStore';
+import { useDeviceStore } from '../api/store/DeviceStore';
+
+// API
+import { query } from '../api/Client';
 
 // Define constants to be referenced below
 
@@ -26,7 +29,7 @@ export type LatLon = {
 
 
 // The component itself.
-const MapBox = ({ height }: Props) => {
+const SkyTekMap = ({ height }: Props) => {
 
   // Devices
   const deviceStore = useStore(useDeviceStore);
@@ -36,7 +39,7 @@ const MapBox = ({ height }: Props) => {
 
   useEffect(() => {
     let timer = setInterval(() => {
-      // queryGPS();
+      queryGPS();
     }, 1000);
     return () => {
       clearInterval(timer)
@@ -46,13 +49,12 @@ const MapBox = ({ height }: Props) => {
   function queryGPS(){
     let newPositions : Array<LatLon> = [];
     let promises = [];
-    console.log("Devices:", deviceStore.devices);
+
     for(let device of deviceStore.devices){
       promises.push(new Promise((resolve, reject) => {
         query([device, "gps"]).then((data) => {
           let newPos = {lat:data.lat, lon:-data.lng};
           setPositions([newPos]);
-          console.log("Set GPS Position to:", newPos);
         }).catch((err) => {
           console.log("GPS Error:", err);
         })
@@ -60,7 +62,7 @@ const MapBox = ({ height }: Props) => {
     }
 
     Promise.all(promises).then((responses) => {
-      console.log("Response Data:", newPositions) ;
+      // console.log("Response Data:", newPositions) ;
       for(let response of responses){
 
       }
@@ -70,11 +72,6 @@ const MapBox = ({ height }: Props) => {
 
   return (
     <div>
-      <Button onClick={() => {
-        queryGPS();
-      }}>
-        Query GPS
-      </Button>
       <Map center={[42.345280, -71.552193]} zoom={12} width={800} height={600}>
         {positions.map((position, index) => (<Marker key={index} anchor={[position.lat, position.lon]} payload={1} onClick={({ event, anchor, payload }) => {}} />))}
     
@@ -86,4 +83,4 @@ const MapBox = ({ height }: Props) => {
   );
 };
 
-export default MapBox;
+export default SkyTekMap;

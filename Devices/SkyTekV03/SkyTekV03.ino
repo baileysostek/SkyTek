@@ -373,7 +373,7 @@ void heartbeat(unsigned long now){
     // If connected to a computer also echo the packet over serial.
     if(connected_to_cpu){
       // Send Heartbeat over serial as well.
-      Serial.printf("{id:%d,msg:%d}\n", 1, heartbeats);
+      // Serial.printf("{id:%d,msg:%d}\n", 1, heartbeats); //TODO: comment in
     }
 
     // Increment the Heartbeat Counter
@@ -471,7 +471,7 @@ void process_serial_command(){
     // List available commands
   } else if (strcmp(command_buffer, "skytek") == 0) {
     // List software Version
-    Serial.printf("SkyTek API Version:%s\n", SKYTEK_API_VERSION);
+    Serial.printf("{\"id\":\"%s\",\"version\":\"%s\"}\n", uuid_buffer, SKYTEK_API_VERSION);
   } else if (strcmp(command_buffer, "version") == 0) {
     // List software Version
     Serial.printf("Board Software Version:%s\n", VERSION);

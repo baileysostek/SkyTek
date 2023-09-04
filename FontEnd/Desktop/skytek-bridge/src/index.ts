@@ -5,7 +5,7 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
-import {discover, query} from "./api/server";
+import {discover, query} from "./api/Server";
 import { SkyTekDevice } from './types';
 
 
@@ -14,9 +14,10 @@ if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
+export let mainWindow : BrowserWindow;
 const createWindow = (): void => {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     height: 600,
     width: 800,
     // frame: false,

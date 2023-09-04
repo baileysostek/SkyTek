@@ -15,10 +15,11 @@ import FolderIcon from '@mui/icons-material/Folder';
 
 // Import our store
 import { useStore } from 'zustand'
-import { useDeviceStore, getDevices, get } from '../store/DeviceStore';
+import { useDeviceStore } from '../api/store/DeviceStore';
 
-// UUID
-import { v4 as uuidv4 } from 'uuid';
+
+// API
+import { query } from '../api/Client';
 
 // Types
 
@@ -28,6 +29,7 @@ interface Props {
 
 const DeviceList = ({ message }: Props) => {
 
+  // Here is the Zustand store of our devices.
   const deviceStore = useStore(useDeviceStore);
 
   // Theme Info
@@ -37,12 +39,12 @@ const DeviceList = ({ message }: Props) => {
 
   // This function will populate the list with the passed template element
   function listDevices() {
-    return deviceStore?.devices?.map((item, index) =>
+    return deviceStore?.devices?.map((device, index) =>
       <ListItem key={index} onClick={() => {
-        get("/query", [item, "/skytek"]).then((data) => {
-          console.log("Data", data);
+        query([device, "skytek"]).then((data) => {
+          console.log("data", data);
         }).catch((err) => {
-          console.log("Caught Error", err);
+          console.log("GPS Error:", err);
         })
       }}>
         <ListItemAvatar>
@@ -51,8 +53,8 @@ const DeviceList = ({ message }: Props) => {
           </Avatar>
         </ListItemAvatar>
         <ListItemText
-          primary={item.port}
-          secondary={true ? uuidv4() : null}
+          primary={device.port}
+          secondary={true ? "" : null}
         />
       </ListItem>,
     );
@@ -60,15 +62,6 @@ const DeviceList = ({ message }: Props) => {
 
   return (
     <div>
-      <Button variant="contained" onClick={() => {
-        getDevices().then((data) => {
-          console.log("Data", data);
-        }).catch((err) => {
-          console.log("Caught Error", err);
-        });
-      }}>
-        Query Connected Devices
-      </Button>
       <Box sx={{ flexGrow: 1, maxWidth: 752 }}>
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>

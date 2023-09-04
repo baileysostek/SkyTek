@@ -1,18 +1,13 @@
+// Here we define and implement all client-side API calls. 
+// These calls are limited to only using javascript functionality availabe to a browser.
+// We use IPC Channels to communicate between the client and server.
+
 // ImportTypes
 import { SkyTekDevice } from 'src/types';
 
-// Zustand Store stuff
-import { createStore } from 'zustand/vanilla'
-
-interface DeviceStore {
-  devices: Array<SkyTekDevice>;
-  setDevices: (devices: Array<SkyTekDevice>) => void;
-}
-
-export const useDeviceStore = createStore<DeviceStore>((set) => ({
-  devices: [],
-  setDevices: (devices : Array<SkyTekDevice>) => set({devices : devices}),
-}))
+// The goal of these API functions are to interface with the Zustand device state for the user so that the react lifecycle can pick up on the zustand event changes and update the DOM automatically for the user
+// Import Zustand Stores
+import { useDeviceStore } from './store/DeviceStore';
 
 // These are the functions that connect to the API, they store data in the zustand store
 // Import IPC Renderer to allow the frontend to talk to the backend.
@@ -22,17 +17,28 @@ const { ipcRenderer } = window.require('electron');
 const QUERY_TIMEOUT = 10 * 1000; // 10s
 
 
+// Register an API call for requesting that the host hardware look for what devices are available.
 export function getDevices() : Promise<Array<SkyTekDevice>>{
   return new Promise((resolve, reject) => {
-    get("/devices").then((devices : Array<SkyTekDevice>) => {
-      useDeviceStore.getState().setDevices(devices);
-      console.log("Response:", devices);
-      resolve(useDeviceStore.getState().devices);
+    get("/devices").then((skytekDevices : Array<SkyTekDevice>) => {
+      useDeviceStore.getState().setDevices(skytekDevices);
+      resolve(skytekDevices);
     }).catch((error : any) => {
       reject(error);
     });
   });
 }
+// Subscribe to an IPC Channel for listening for device disconnects.
+ipcRenderer.on("/removeDevice", (_event, device : SkyTekDevice) => {
+  let devices = [...useDeviceStore.getState().devices];
+  console.log("Removing", device, devices);
+  let deviceIndex = devices.map((skyTekDevice) => (skyTekDevice.port)).indexOf(device.port);
+  if(deviceIndex >= 0){
+    devices.splice(deviceIndex, 1);
+    useDeviceStore.getState().setDevices(devices);
+  }
+});
+
 
 function timeout(prom : Promise<any>, time : number) : Promise<number> {
 	let timer : any;

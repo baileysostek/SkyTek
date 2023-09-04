@@ -1,8 +1,8 @@
 // Here we define and implement all server-side API calls. 
 // These calls and functions can use the full suite of NodeJS features by being executed within the Electron process. 
 // We use IPC Channels to communicate between the client and server.
-
 import {SerialPort, ReadlineParser } from "serialport";
+import { mainWindow } from "../index";
 import { v4 as uuidv4 } from 'uuid';
 import { SkyTekDevice } from "../types";
 
@@ -50,7 +50,7 @@ export function discover():  Promise<Array<SkyTekDevice>> {
         if(index >= 0){
           // We already have this device registered.
           connectedDevices.splice(index, 1);
-          continue; // TODO: in the future key on device id?
+          continue;
         }
 
         // Push new promise onto our array of promises to execute
@@ -58,7 +58,7 @@ export function discover():  Promise<Array<SkyTekDevice>> {
           // Create a connection to that serial port. 
           const port = new SerialPort({ path: portPath, baudRate:9600 }, (err) => {
             // console.log("Port Creation Error:", err); // Sometimes we wont be able to talk to the serial port, if that is the case return.
-            return reject(err);
+            return resolve("Error: Could not open connection to device.");
           });
 
           // Define a new parser to parse the data that comes out of this serial port.
@@ -68,10 +68,10 @@ export function discover():  Promise<Array<SkyTekDevice>> {
           // Here we do our SkyTek Handshake to confirm that we are talking with a SkyTek device.
           port.write(SKYTEK_ID_REQUEST, (err) => {
             if (err) {
-              // console.log('Error: Could not write message.');
-              return reject('Error: Could not write message.');
+              return resolve('Error: Could not write message.');
             }
 
+            // Query this device
             // TODO refactor into call and response system.
             parser.once('data', (data) => {
               // We recieved data from our SkyTek device
@@ -93,6 +93,12 @@ export function discover():  Promise<Array<SkyTekDevice>> {
                 resolveCallbacks(data);
               });
 
+              // Register a callback for the device disconnecting / closing
+              port.on('close', (err : any) => {
+                console.log("Serial Port closed", err);
+                removeDevice(device);
+              });
+
               return resolve(device);
             });
           });
@@ -111,10 +117,12 @@ export function discover():  Promise<Array<SkyTekDevice>> {
           devices.delete(deviceKey);
         }
         
-        console.log(devices);
+        // Update the Zustand store with the updated device list.
+        let skytekDevices = Array.from(devices.values()).map(controlledDevice => controlledDevice.device);
+        console.log("SkyTek Devices:", skytekDevices);
 
         //Return the map of connected devices
-        resolve(Array.from(devices.values()).map(controlledDevice => controlledDevice.device));
+        resolve(skytekDevices);
       });
 
     }).catch((error) => {
@@ -132,20 +140,21 @@ export function query(skyTekDevice : SkyTekDevice, command : string, args : any 
   // Check to see if our command starts with the command character
   //TODO: Check that this device has a command handler for the command we are passing.
   return new Promise((resolve, reject) => {
-    // Generate a new UUID for this message. 
-    let uuid =  uuidv4().replaceAll("-", "");
-    console.log("ID", uuid);
-
-    // build our message here
-    // TODO account for args
-    let request = COMMAND_START_CHARACTER+uuid+UUID_DELIMITER_CHARACTER+command+COMMAND_END_CHARACTER;
-
-    // Log 
-    console.log("Writing", request, "to", skyTekDevice);
-
+    // Check that we have this device registered.
     if(devices.has(skyTekDevice.port)){
+      // Get the device
       let device = devices.get(skyTekDevice.port);
       let port = device.port; // Get our real serial port
+
+      // Generate a new UUID for this message. 
+      let uuid =  uuidv4().replaceAll("-", "");
+
+      // build our message here
+      // TODO: account for args
+      let request = COMMAND_START_CHARACTER+uuid+UUID_DELIMITER_CHARACTER+command;
+
+      // Log 
+      console.log("[Request]", skyTekDevice.port, ":", uuid, ":", request);
 
       // Write the command to the port. 
       port.write(request, (err) => {
@@ -159,7 +168,7 @@ export function query(skyTekDevice : SkyTekDevice, command : string, args : any 
         
         // Add the listener to our set of callbacks
         return registerCallback(uuid, (data : JSON | null) => {
-            console.log("Resolving Callback:", uuid);
+            console.log("[Response]", skyTekDevice.port, ":", uuid, ":", data);
             resolve(data ? data : {} as JSON);
         })
       });
@@ -182,12 +191,11 @@ function resolveCallbacks(jsonData : string){
     // Try parse the json
     let json = JSON.parse(jsonData);
 
-    console.log("JSON data", json, json.hasOwnProperty("id"));
-
     // If we have a json object with a key of "id", store that value
     if(json.hasOwnProperty("id")){
       let uuid = json.id;
-      console.log("message has ID", uuid, callbacks);
+      // Delte the UUID off of the response data
+      delete json.id;
       // Check to see if we have a callback waiting on that message.
       if(callbacks.has(uuid)){
         // Execute the callback.
@@ -206,4 +214,14 @@ function resolveCallbacks(jsonData : string){
 
   // If we get here, we had a generic message with no callbacks. This means it could be a boradcast message, so check our event listeners.
   //TODO: event system.
+}
+
+function removeDevice(skyTekDevice : SkyTekDevice){
+  if(devices.has(skyTekDevice.port)){
+    devices.delete(skyTekDevice.port);
+    // Send an IPC message to remove this device.
+    mainWindow.webContents.send("/removeDevice", skyTekDevice);
+
+    console.log("Removed Device", skyTekDevice.port);
+  }
 }
