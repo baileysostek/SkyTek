@@ -5,6 +5,7 @@ import {SerialPort, ReadlineParser } from "serialport";
 import { mainWindow } from "../index";
 import { v4 as uuidv4 } from 'uuid';
 import { SkyTekDevice } from "../types";
+import { ipcMain } from "electron";
 
 // Define any constants here
 const COMMAND_START_CHARACTER = '/';
@@ -27,6 +28,12 @@ type SerialResponse = {
   data:string,
 }
 
+ipcMain.handleOnce("/onLoad", () => {
+  setInterval(() => {
+    discover();
+  }, 1000)
+});
+
 export function discover():  Promise<Array<SkyTekDevice>> {
   // We dont know how long this function will take to return, so we will return a promise that we can then observe the lifecycle of.
   return new Promise((resolve, reject) => {
@@ -35,7 +42,6 @@ export function discover():  Promise<Array<SkyTekDevice>> {
 
       // Get a set of the keys of the connected devices
       let connectedDevices = Array.from(devices.keys());
-      console.log("Connected:", connectedDevices);
 
       let connections = Array<Promise<any>>();
 
@@ -80,7 +86,7 @@ export function discover():  Promise<Array<SkyTekDevice>> {
               let device = new SkyTekDevice(portPath);
 
               // Add this new device to our map of devices. Our internal heartbeat loop will monitor connection status and state changes automatically.
-              devices.set(portPath, {
+              addDevice(portPath, {
                 port : port,
                 parser : parser,
                 device : device,
@@ -108,18 +114,16 @@ export function discover():  Promise<Array<SkyTekDevice>> {
       // We have constructed a promise which trys to connect to a port and communicate with a SkyTek device.
       // Here we execute all of those promises and wait for them to return.
       Promise.all(connections).then((data) => {
-        console.log("Promise All Data:", data);
       }).catch((err) => {
         console.log("Promise All Error:", err);
       }).finally(() => {
         // Now we will remove any devices that we had regisered but did not see in this discovery process.
         for(let deviceKey of connectedDevices){
-          devices.delete(deviceKey);
+          removeDevice(devices.get(deviceKey).device);
         }
         
         // Update the Zustand store with the updated device list.
         let skytekDevices = Array.from(devices.values()).map(controlledDevice => controlledDevice.device);
-        console.log("SkyTek Devices:", skytekDevices);
 
         //Return the map of connected devices
         resolve(skytekDevices);
@@ -214,6 +218,13 @@ function resolveCallbacks(jsonData : string){
 
   // If we get here, we had a generic message with no callbacks. This means it could be a boradcast message, so check our event listeners.
   //TODO: event system.
+}
+function addDevice(portPath : string, device : ControlledSkyTekDevice){
+  devices.set(portPath, device); // Add the device
+  // Send an IPC message to remove this device.
+  mainWindow.webContents.send("/addDevice", device.device);
+
+  console.log("Added Device", device.device);
 }
 
 function removeDevice(skyTekDevice : SkyTekDevice){

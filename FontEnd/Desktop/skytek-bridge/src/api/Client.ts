@@ -21,13 +21,18 @@ const QUERY_TIMEOUT = 10 * 1000; // 10s
 export function getDevices() : Promise<Array<SkyTekDevice>>{
   return new Promise((resolve, reject) => {
     get("/devices").then((skytekDevices : Array<SkyTekDevice>) => {
-      useDeviceStore.getState().setDevices(skytekDevices);
       resolve(skytekDevices);
     }).catch((error : any) => {
       reject(error);
     });
   });
 }
+// Subscribe to an IPC Channel for listening for device connections.
+ipcRenderer.on("/addDevice", (_event, device : SkyTekDevice) => {
+  let devices = [...useDeviceStore.getState().devices];
+  devices.push(device);
+  useDeviceStore.getState().setDevices(devices);
+});
 // Subscribe to an IPC Channel for listening for device disconnects.
 ipcRenderer.on("/removeDevice", (_event, device : SkyTekDevice) => {
   let devices = [...useDeviceStore.getState().devices];
