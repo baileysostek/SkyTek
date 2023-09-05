@@ -11,7 +11,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Avatar from '@mui/material/Avatar';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
-import FolderIcon from '@mui/icons-material/Folder';
+import RocketIcon from '@mui/icons-material/RocketLaunchOutlined';
 
 // Import our store
 import { useStore } from 'zustand'
@@ -49,7 +49,7 @@ const DeviceList = ({ message }: Props) => {
       }}>
         <ListItemAvatar>
           <Avatar>
-            <FolderIcon />
+            <RocketIcon />
           </Avatar>
         </ListItemAvatar>
         <ListItemText

@@ -28,8 +28,12 @@ type SerialResponse = {
   data:string,
 }
 
-ipcMain.handleOnce("/onLoad", () => {
-  setInterval(() => {
+let interval : NodeJS.Timeout | null = null;
+ipcMain.handle("/onLoad", () => {
+  if(interval){
+    clearInterval(interval);
+  }
+  interval = setInterval(() => {
     discover();
   }, 1000)
 });
@@ -167,8 +171,6 @@ export function query(skyTekDevice : SkyTekDevice, command : string, args : any 
           console.log('Error: Could not write message.');
           return reject(err?.message);
         }
-
-        console.log("Message Written successfuly.");
         
         // Add the listener to our set of callbacks
         return registerCallback(uuid, (data : JSON | null) => {
