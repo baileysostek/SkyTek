@@ -371,10 +371,8 @@ void heartbeat(unsigned long now){
     send_lora();
 
     // If connected to a computer also echo the packet over serial.
-    if(connected_to_cpu){
-      // Send Heartbeat over serial as well.
-      // Serial.printf("{id:%d,msg:%d}\n", 1, heartbeats); //TODO: comment in
-    }
+    // Send Heartbeat over serial as well.
+    Serial.printf("{\"topic\":\"%s\",\"msg\":%d}\n", "/heartbeat", heartbeats);
 
     // Increment the Heartbeat Counter
     heartbeats++;

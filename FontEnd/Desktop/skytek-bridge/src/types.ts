@@ -1,12 +1,15 @@
-import {SerialPort, ReadlineParser } from "serialport";
-
 export class SkyTekDevice {
+  // This is a unique ID which identifys this specific SkyTekDevice
+  uuid : string;
+
+  // These properties are published about the device. 
   name : string;
   port : string;
   capabilities : Array<SkyTekCapability>[]; 
 
   // Things the device can do
-  constructor(port : string){
+  constructor(uuid: string, port : string){
+    this.uuid = uuid;
     this.port = port;
   }
 }

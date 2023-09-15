@@ -11,6 +11,7 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import React from 'react';
+
 import AvailableDevices from './routes/AvailableDevices';
 
 // Indicate that the app has loaded
@@ -25,7 +26,7 @@ ipcRenderer.invoke("/onLoad").then((result : any) => {
 const router = createHashRouter([
   {
     path: "/",
-    element: <div>Hello world!</div>,
+    element: <AvailableDevices/>,
     children:[
       {
         path:"devices/",

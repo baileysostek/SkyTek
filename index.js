@@ -31,6 +31,12 @@ const COMMANDS = {
             
         }
     },
+    "capabiliites":{
+        "description":"Lists all of the available capabilities of this SkyTek environment as well as plugins.",
+        "command": () => {
+            
+        }
+    },
     "exit":{
         "description":"Exits the software",
         "command": () => {

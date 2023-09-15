@@ -87,7 +87,7 @@ export function discover():  Promise<Array<SkyTekDevice>> {
               // We recieved data from our SkyTek device
               console.log(portPath, "data:", data);
               // Once confirmed that we are talking with a skytek device, we create an instance of that device with the capabilities the device says it has.
-              let device = new SkyTekDevice(portPath);
+              let device = new SkyTekDevice(uuidv4(), portPath);
 
               // Add this new device to our map of devices. Our internal heartbeat loop will monitor connection status and state changes automatically.
               addDevice(portPath, {
@@ -99,8 +99,7 @@ export function discover():  Promise<Array<SkyTekDevice>> {
 
               // Pipe all data from this port to our callback listeners.
               parser.on('data', (data) => {
-                console.log(portPath, "data", data);
-                resolveCallbacks(data);
+                resolveCallbacks(device, data);
               });
 
               // Register a callback for the device disconnecting / closing
@@ -192,12 +191,13 @@ function registerCallback(uuid : string, callback : (data : JSON | null) => void
 }
 
 // Our responses should be json data.
-function resolveCallbacks(jsonData : string){
+function resolveCallbacks(device : SkyTekDevice, jsonData : string){
   try{
     // Try parse the json
     let json = JSON.parse(jsonData);
 
     // If we have a json object with a key of "id", store that value
+    // Any message that passes back an "id" is a QUERY type message and we have a single callback which needs to resolve that message
     if(json.hasOwnProperty("id")){
       let uuid = json.id;
       // Delte the UUID off of the response data
@@ -205,6 +205,7 @@ function resolveCallbacks(jsonData : string){
       // Check to see if we have a callback waiting on that message.
       if(callbacks.has(uuid)){
         // Execute the callback.
+        console.log("[QUERY]", device.port, ":", json);
         callbacks.get(uuid)(json); // call the callback with the data passed.
         // Remove that Callback
         callbacks.delete(uuid);
@@ -212,14 +213,29 @@ function resolveCallbacks(jsonData : string){
         return;
       }
     }
+
+    // If we get here, we had a generic message with no callbacks. This means it could be a boradcast message, so lets emit that message.
+    if(json.hasOwnProperty("topic")){
+      // Construct the Specifc Message topic for this device.
+      let topic = "/"+device.uuid+json.topic;
+      // Remove the topic entry from the JSON data
+      delete json.topic;
+
+      // Print the topic and data that we are about to send.
+      console.log("[PUB-SUB]", topic, ":", json);
+      // Send this message globally.
+      mainWindow.webContents.send(topic, json);
+      // Return from this function, we have handled this message.
+      return;
+    }
+
   }catch(err){
     // If we get an error say the error.
     // console.log(err);
     return;
   }
 
-  // If we get here, we had a generic message with no callbacks. This means it could be a boradcast message, so check our event listeners.
-  //TODO: event system.
+  // If we got here we had an error parsing the message we got back from the SkyTek device.
 }
 function addDevice(portPath : string, device : ControlledSkyTekDevice){
   devices.set(portPath, device); // Add the device

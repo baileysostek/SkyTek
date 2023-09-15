@@ -19,7 +19,8 @@ import { useDeviceStore } from '../api/store/DeviceStore';
 
 
 // API
-import { query } from '../api/Client';
+import {selectDevice} from '../api/Client';
+import DeviceStatus from './DeviceStatus';
 
 // Types
 
@@ -32,46 +33,31 @@ const DeviceList = ({ message }: Props) => {
   // Here is the Zustand store of our devices.
   const deviceStore = useStore(useDeviceStore);
 
-  // Theme Info
-  const Demo = styled('div')(({ theme }) => ({
-    backgroundColor: theme.palette.background.paper,
-  }));
-
   // This function will populate the list with the passed template element
   function listDevices() {
+    if(!(deviceStore?.devices) || (deviceStore?.devices?.length <= 0)){
+      return <div>No Available Devices</div>
+    }
     return deviceStore?.devices?.map((device, index) =>
-      <ListItem key={index} onClick={() => {
-        query([device, "skytek"]).then((data) => {
-          console.log("data", data);
-        }).catch((err) => {
-          console.log("GPS Error:", err);
-        })
+      <div key={index} onClick={() => {
+        selectDevice(device);
       }}>
-        <ListItemAvatar>
-          <Avatar>
-            <RocketIcon />
-          </Avatar>
-        </ListItemAvatar>
-        <ListItemText
-          primary={device.port}
-          secondary={true ? "" : null}
-        />
-      </ListItem>,
+        <DeviceStatus device={device}/>
+      </div>,
     );
   }
 
   return (
     <div>
-      <Box sx={{ flexGrow: 1, maxWidth: 752 }}>
+      <Box sx={{ flexGrow: 1}}>
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <Typography sx={{ mt: 4, mb: 2 }} variant="h6" component="div">
+              Available Devices
             </Typography>
-            <Demo>
               <List dense={false}>
                 {listDevices()}
               </List>
-            </Demo>
           </Grid>
         </Grid>
       </Box>
