@@ -53,6 +53,8 @@ const NavBar = ({}: Props) => {
             News
           </Typography>
 
+          {JSON.stringify(deviceStore.selected)}
+
           <Button color="inherit">Login</Button>
         </Toolbar>
       </AppBar>
