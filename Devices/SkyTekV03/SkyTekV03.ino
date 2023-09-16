@@ -70,10 +70,13 @@ enum FixQuality {
   DGPS_FIX
 };
 
-// LoRa Variables
+// [@LoRa#V1] Heartbeat Variables
 #define HEARTBEAT_TRANSMISSION_FREQUENCY 1000000 // This is transmission time in microseconds. value / 1000000 = Hz
 #define LORA_RADIO_FREQUENCY 915E6
 char lora_packet[11 + 1 + 11] = {'\0'}; //-000.000000
+bool has_lora = false;
+
+// [@SkyTekCore#V1] Heartbeat Variables
 unsigned long last_heartbeat = 0;
 unsigned int heartbeats = 0;
 
@@ -135,7 +138,6 @@ double accel_pos_z = 0.0;
 
 // Veraibles for representing if different pieces of hardware were found or not.
 bool has_bmp = false;
-bool has_lora = false;
 bool has_screen = false;
 bool has_gps = false;
 bool has_accel = false;

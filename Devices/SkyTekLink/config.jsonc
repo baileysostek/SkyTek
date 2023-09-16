@@ -1,0 +1,7 @@
+{
+    "name":"SkyTek Radio Downlink",
+    "capabilities":[
+        "lora_receive",
+        "serial"
+    ]
+}

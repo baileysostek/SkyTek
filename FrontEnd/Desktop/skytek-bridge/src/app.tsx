@@ -39,13 +39,13 @@ const router = createHashRouter([
 
 // Define our router
 ReactDOM.render(
-  <div style={{width:'100vw', height:'100vh', marginTop:'16px'}}>
+  <div style={{width:'100vw', marginTop:'16px'}}>
     {/* Navbar and Sidebar */}
     <div style={{position:'absolute', width:'100vw'}}>
       <NavBar></NavBar>
     </div>
     {/* Content */}
-    <div style={{backgroundColor:'#404040', width:'100%', height:'100%'}}>
+    <div style={{width:'100%'}}>
       <div style={{position:'relative', top:'64px'}}>
         <React.StrictMode>
           <RouterProvider router={router} />  

@@ -38,7 +38,7 @@ const DeviceStatus = ({ device }: Props) => {
   }, []);
 
   return (
-    <div style={{border:"2px solid", borderColor:"#202020", borderRadius:"24px", width:"100%"}}>
+    <div style={{border:"2px solid", borderColor:"#202020", borderRadius:"24px", overflow:"hidden"}}>
       <ListItem onMouseEnter={() => {}}>
         <ListItemAvatar>
           <Avatar>
@@ -46,6 +46,7 @@ const DeviceStatus = ({ device }: Props) => {
           </Avatar>
         </ListItemAvatar>
         <ListItemText
+          style={{minWidth:'128px'}}
           primary={"Port:" + device.port}
           secondary={true ? "SkyTek Version 0.1" : null}
         />

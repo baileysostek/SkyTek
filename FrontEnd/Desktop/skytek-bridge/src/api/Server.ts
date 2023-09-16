@@ -231,7 +231,9 @@ function resolveCallbacks(device : SkyTekDevice, jsonData : string){
 
   }catch(err){
     // If we get an error say the error.
-    // console.log(err);
+    if(err instanceof SyntaxError){
+      console.log("[SYNTAX ERROR]", jsonData);
+    }
     return;
   }
 
