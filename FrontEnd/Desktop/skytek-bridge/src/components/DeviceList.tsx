@@ -25,10 +25,10 @@ import DeviceStatus from './DeviceStatus';
 // Types
 
 interface Props {
-  message: string;
+
 }
 
-const DeviceList = ({ message }: Props) => {
+const DeviceList = ({} : Props) => {
 
   // Here is the Zustand store of our devices.
   const deviceStore = useStore(useDeviceStore);

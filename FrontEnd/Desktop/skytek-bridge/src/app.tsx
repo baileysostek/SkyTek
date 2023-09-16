@@ -13,6 +13,7 @@ import {
 import React from 'react';
 
 import AvailableDevices from './routes/AvailableDevices';
+import NavBar from './components/NavBar';
 
 // Indicate that the app has loaded
 const { ipcRenderer } = window.require('electron');
@@ -38,9 +39,20 @@ const router = createHashRouter([
 
 // Define our router
 ReactDOM.render(
-  <React.StrictMode>
-    <RouterProvider router={router} />
-  </React.StrictMode>
+  <div style={{width:'100vw', height:'100vh', marginTop:'16px'}}>
+    {/* Navbar and Sidebar */}
+    <div style={{position:'absolute', width:'100vw'}}>
+      <NavBar></NavBar>
+    </div>
+    {/* Content */}
+    <div style={{backgroundColor:'#404040', width:'100%', height:'100%'}}>
+      <div style={{position:'relative', top:'64px'}}>
+        <React.StrictMode>
+          <RouterProvider router={router} />  
+        </React.StrictMode>
+      </div>
+    </div>
+  </div>
 , document.body);
 
 // function render() {

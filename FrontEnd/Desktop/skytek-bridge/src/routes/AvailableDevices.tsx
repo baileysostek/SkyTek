@@ -30,7 +30,6 @@ const AvailableDevices = ({}: Props) => {
 
   return (
   <div>
-    <NavBar/>
     <DeviceList></DeviceList>
   </div>
   );
