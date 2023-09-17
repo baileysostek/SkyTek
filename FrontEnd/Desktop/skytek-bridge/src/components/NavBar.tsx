@@ -17,6 +17,7 @@ import { useDeviceStore } from '../api/store/DeviceStore';
 
 // API
 import { query } from '../api/Client';
+import PulseDot from './PulseDot';
 
 // Types
 interface Props {
@@ -28,18 +29,12 @@ const NavBar = ({}: Props) => {
   // Here is the Zustand store of our devices.
   const deviceStore = useStore(useDeviceStore);
 
-  // Theme Info
-  const Demo = styled('div')(({ theme }) => ({
-    backgroundColor: theme.palette.background.paper,
-  }));
-
-
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static">
+      <AppBar position="fixed" style={{minHeight:'64px', maxHeight:'64px'}}>
         <Toolbar>
 
-          <IconButton
+          {/* <IconButton
             size="large"
             edge="start"
             color="inherit"
@@ -47,15 +42,18 @@ const NavBar = ({}: Props) => {
             sx={{ mr: 2 }}
           >
             <MenuIcon />
-          </IconButton>
+          </IconButton> */}
 
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            News
+            SkyTek Bridge
           </Typography>
 
-          {JSON.stringify(deviceStore.selected)}
+          {deviceStore.selected ? JSON.stringify(deviceStore.selected) : null}
 
-          <Button color="inherit">Login</Button>
+          {/* The Heartbeat Dot */}
+          {deviceStore.selected ? <PulseDot shouldPulse={false}></PulseDot> : null}
+
+          {/* <Button color="inherit">Login</Button> */}
         </Toolbar>
       </AppBar>
     </Box>

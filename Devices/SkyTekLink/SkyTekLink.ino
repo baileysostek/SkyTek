@@ -262,6 +262,11 @@ void parse_lora(){
   }
 }
 
+struct SkyTekMessageField {
+  char* fieldName;
+  
+}
+
 // These are helper functions for publishing messages
 void publish(){
   Serial.printf("{\"topic\":\"%s\",\"msg\":%d}\n", "/heartbeat", heartbeats);

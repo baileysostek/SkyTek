@@ -1,3 +1,4 @@
+// Import React
 import React, { useState } from 'react';
 
 // Material UI
@@ -17,9 +18,8 @@ import RocketIcon from '@mui/icons-material/RocketLaunchOutlined';
 import { useStore } from 'zustand'
 import { useDeviceStore } from '../api/store/DeviceStore';
 
-
 // API
-import {selectDevice} from '../api/Client';
+import {navigate, selectDevice} from '../api/Client';
 import DeviceStatus from './DeviceStatus';
 
 // Types
@@ -29,7 +29,6 @@ interface Props {
 }
 
 const DeviceList = ({} : Props) => {
-
   // Here is the Zustand store of our devices.
   const deviceStore = useStore(useDeviceStore);
 
@@ -41,6 +40,7 @@ const DeviceList = ({} : Props) => {
     return deviceStore?.devices?.map((device, index) =>
       <div key={index} onClick={() => {
         selectDevice(device);
+        navigate("/device");
       }}>
         <DeviceStatus device={device}/>
       </div>,

@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 // Import Zustand Stores
 import { useDeviceStore } from './store/DeviceStore';
 import { IpcRendererEvent } from 'electron';
+import { Router } from 'react-router-dom';
 
 // These are the functions that connect to the API, they store data in the zustand store
 // Import IPC Renderer to allow the frontend to talk to the backend.
@@ -154,4 +155,13 @@ export function subscribe(device : SkyTekDevice, topic : string, callback : (dat
 
   // Return this subscriber
   return subscriber;
+}
+
+// Router
+let router : any;
+export function setRouter(theRouter : any){
+  router = theRouter;
+}
+export function navigate(path : string) : void {
+  router.navigate(path);
 }
