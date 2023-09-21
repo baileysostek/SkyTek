@@ -273,4 +273,8 @@ void publish(){
 }
 
 
+// This is a map to store connected devices
+#define MAX_DEVICES 16
+int devices = 0;
+char keys[MAX_DEVICES][32]
 

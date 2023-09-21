@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/baileysostek/SkyTek/issues"
   },
-  "homepage": "https://github.com/baileysostek/SkyTek#readme"
+  "homepage": "https://github.com/baileysostek/SkyTek#readme",
+  "dependencies": {
+    "json-easy-strip": "^1.0.6"
+  }
 }

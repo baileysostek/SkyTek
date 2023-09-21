@@ -2,8 +2,9 @@
     "name":"SkyTek GPS Transmitter",
     "capabilities":[
         "gps",
-        "lora",
+        "lora_send",
         "rgb_led",
-        "battery"
+        "battery",
+        "heartbeat"
     ]
 }

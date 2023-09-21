@@ -1,14 +1,36 @@
 {
     // Metadata
-    "name":"GPS",
+    "name":"gps",
     "description": "The GPS component allows a SkyTek device to localize itself in space.",
-    "command":"gps",
     "data":[
-        {"name":"lat", "type":"number"},
-        {"name":"lon", "type":"number"},
-        {"name":"accuracy", "type":"number"},
-        {"name":"altitude", "type":"number"},
-        {"name":"sattelites", "type":"number"}
+        {"name":"lat", "type":"float"},
+        {"name":"lon", "type":"float"},
+        {"name":"accuracy", "type":"float"},
+        {"name":"altitude", "type":"float"},
+        {"name":"sattelites", "type":"int"},
+        {"name":"time", "type":"string", "length":5},
+        {"name":"date", "type":"string", "length":10},
+        {"name":"fix", "type":"boolean"}
     ],
-    "interface":"QUERY"
+    "messages":[
+        {}
+    ],
+    "commands":{
+        "/pos":{
+            "type":"QUERY",
+            "fields":["lat", "lon", "altitude", "accuracy"]
+        },
+        "/time":{
+            "type":"QUERY",
+            "fields":["date", "time"]
+        },
+        "/sattelites":{
+            "type":"QUERY",
+            "fields":["sattelites"]
+        },
+        "/gps_fix":{
+            "type":"PUB-SUB",
+            "fields":["fix"]
+        }
+    }
 }

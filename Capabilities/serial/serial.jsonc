@@ -4,11 +4,9 @@
     "description": "The Serial component allows a SkyTek device to communicate over serial.",
     "command":"serial",
     "data":[
-        {"name":"lat", "type":"number"},
-        {"name":"lon", "type":"number"},
-        {"name":"accuracy", "type":"number"},
-        {"name":"altitude", "type":"number"},
-        {"name":"sattelites", "type":"number"}
+        {"name":"COMMAND_START_CHARACTER", "type":"char", "value":"'/'", "#define":true},
+        {"name":"COMMAND_END_CHARACTER", "type":"char", "value":"'\n'", "#define":true},
+        {"name":"COMMAND_BUFFER_SIZE", "type":"int", "value":64, "#define":true}
     ],
     "interface":"QUERY"
 }

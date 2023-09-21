@@ -29,7 +29,7 @@ const DeviceStatus = ({ device }: Props) => {
   // When this component is mounted in the dom, subscribe to heartbeat messages.
   useEffect(() => {
     // Create a new subscriber
-    subscribe(device, "heartbeat", (data) => {
+    let subscriber = subscribe(device, "heartbeat", (data) => {
       setShouldPulse(true);
       setTimeout(() => {
         setShouldPulse(false);

@@ -5,6 +5,16 @@ const rl = readline.createInterface({
     output:process.stdout,
     terminal: false
 })
+
+// JSON comment utility
+const requireJSON = require('json-easy-strip');
+
+// Import FS so we can read all of the files in a directory.
+const fs = require('fs');
+
+// Directory where Capabilities live.
+const CAPABILITIES_DIRECTORY = "./Capabilities"
+
 // Define our Software
 const SOFTWARE_NAME = "SkyTek Manager";
 const COMMAND_CHARACTER = "/";
@@ -31,10 +41,10 @@ const COMMANDS = {
             
         }
     },
-    "capabiliites":{
+    "capabilities":{
         "description":"Lists all of the available capabilities of this SkyTek environment as well as plugins.",
         "command": () => {
-            
+            listCapabilities();
         }
     },
     "exit":{
@@ -74,3 +84,35 @@ rl.on("line", (line) => {
 rl.once("close", () => {
     COMMANDS['exit'].command();
 });
+
+
+// Helper functions for commands.
+function listCapabilities(){
+    // Get all of the subdirectories in our capabilities forlder. 
+    let directories = fs.readdirSync(CAPABILITIES_DIRECTORY);
+
+    // Create a Map mapping the capability name to the json definition file.
+    let capabilities = new Map();
+
+    // Iterate through the list of found capabilities. 
+    for(let dir of directories){
+        // Check that the dir has the the expected file. 
+        let subDirPath = CAPABILITIES_DIRECTORY+"/"+dir;
+        let capabilityDefinition = dir+".jsonc";
+
+        // Check if the capability file exists
+        let filePath = subDirPath+"/"+capabilityDefinition;
+        try{
+            console.log(filePath)
+            let stats = fs.statSync(filePath, {});
+            if(stats){
+                capabilities.set(dir, requireJSON(filePath));
+            }
+        }catch(error){
+            // If there is an error
+            console.log(error)
+        }
+    }
+
+    console.log(capabilities.keys())
+}
