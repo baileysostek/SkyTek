@@ -11,7 +11,7 @@ import { ipcMain } from "electron";
 const COMMAND_START_CHARACTER = '/';
 const COMMAND_END_CHARACTER = '\n';
 const UUID_DELIMITER_CHARACTER = ':';
-const SKYTEK_ID_REQUEST = '/skytek';
+const SKYTEK_ID_REQUEST = 'skytek';
 
 // This is a map of values we will return
 let devices = new Map<string, ControlledSkyTekDevice>();
@@ -26,6 +26,11 @@ type ControlledSkyTekDevice = {
 type SerialResponse = {
   id:string,
   data:string,
+}
+
+type SkyTekInitializationResponse = {
+  id : string, 
+  version: number
 }
 
 let interval : NodeJS.Timeout | null = null;
@@ -76,18 +81,50 @@ export function discover():  Promise<Array<SkyTekDevice>> {
           port.pipe(parser);
 
           // Here we do our SkyTek Handshake to confirm that we are talking with a SkyTek device.
-          port.write(SKYTEK_ID_REQUEST, (err) => {
-            if (err) {
-              return resolve('Error: Could not write message.');
-            }
+          // Generate a new UUID for this message. 
+          let uuid =  uuidv4().replaceAll("-", "");
 
-            // Query this device
-            // TODO refactor into call and response system.
-            parser.once('data', (data) => {
-              // We recieved data from our SkyTek device
+          // build our message here
+          let request = COMMAND_START_CHARACTER+uuid+UUID_DELIMITER_CHARACTER+SKYTEK_ID_REQUEST;
+
+          // Here we need to persist the initial listener we use to listen for response
+          let requestResponseListener : (chunk: any) => void;
+
+          // Write the command to the port. 
+          port.write(request, (err) => {
+            // Ensure command was written to port.
+            if (err) {
+              console.log('Error: Could not write message.');
+              return reject(err?.message);
+            } else {
+              console.log("Device connected on port:", portPath, ". Attempting to connect to device...");
+              console.log(request);
+
+              // Pipe all data from this port to our callback listeners.
+              requestResponseListener = (data) => {
+                resolveCallbacks(null, data);
+              };
+              parser.on('data', requestResponseListener);
+            }
+            
+            // Add the listener to our set of callbacks
+            // Eventually this CB will trigger if we get a response from the device.
+            registerCallback(uuid, (data : JSON | null) => {
+              // We received data from our SkyTek device
               console.log(portPath, "data:", data);
+              
               // Once confirmed that we are talking with a skytek device, we create an instance of that device with the capabilities the device says it has.
-              let device = new SkyTekDevice(uuidv4(), portPath);
+              let device_uuid;
+              if(data.hasOwnProperty("uuid")){
+                //@ts-ignore // TODO: cast the JSON returned to an expected type.
+                device_uuid = data.uuid;
+                console.log("Warning: SkyTek device does not define ID");
+              }else{
+                device_uuid = uuidv4();
+              }
+
+              // Create our SkyTek device.
+              let device = new SkyTekDevice(device_uuid, portPath);
 
               // Add this new device to our map of devices. Our internal heartbeat loop will monitor connection status and state changes automatically.
               addDevice(portPath, {
@@ -97,7 +134,11 @@ export function discover():  Promise<Array<SkyTekDevice>> {
                 callback : null,
               });
 
-              // Pipe all data from this port to our callback listeners.
+              // Now we need to remove the old listener
+              parser.removeListener('data', requestResponseListener); // Remove old Listener
+
+              // Register a new listener aware of our device context.
+              console.log("Registering new Listener");
               parser.on('data', (data) => {
                 resolveCallbacks(device, data);
               });
@@ -109,18 +150,18 @@ export function discover():  Promise<Array<SkyTekDevice>> {
               });
 
               return resolve(device);
-            });
+            })
           });
         }));  
       }
 
-      // We have constructed a promise which trys to connect to a port and communicate with a SkyTek device.
+      // We have constructed a promise which tries to connect to a port and communicate with a SkyTek device.
       // Here we execute all of those promises and wait for them to return.
       Promise.all(connections).then((data) => {
       }).catch((err) => {
         console.log("Promise All Error:", err);
       }).finally(() => {
-        // Now we will remove any devices that we had regisered but did not see in this discovery process.
+        // Now we will remove any devices that we had registered but did not see in this discovery process.
         for(let deviceKey of connectedDevices){
           removeDevice(devices.get(deviceKey).device);
         }
@@ -161,7 +202,7 @@ export function query(skyTekDevice : SkyTekDevice, command : string, args : any 
       let request = COMMAND_START_CHARACTER+uuid+UUID_DELIMITER_CHARACTER+command;
 
       // Log 
-      console.log("[Request]", skyTekDevice.port, ":", uuid, ":", request);
+      console.log("[QUERY-REQUEST]", skyTekDevice.port, ":", uuid, ":", request);
 
       // Write the command to the port. 
       port.write(request, (err) => {
@@ -173,7 +214,7 @@ export function query(skyTekDevice : SkyTekDevice, command : string, args : any 
         
         // Add the listener to our set of callbacks
         return registerCallback(uuid, (data : JSON | null) => {
-            console.log("[Response]", skyTekDevice.port, ":", uuid, ":", data);
+            console.log("[QUERY-RESPONSE]", skyTekDevice.port, ":", uuid, ":", data);
             resolve(data ? data : {} as JSON);
         })
       });
@@ -191,7 +232,7 @@ function registerCallback(uuid : string, callback : (data : JSON | null) => void
 }
 
 // Our responses should be json data.
-function resolveCallbacks(device : SkyTekDevice, jsonData : string){
+function resolveCallbacks(device : SkyTekDevice | null, jsonData : string){
   try{
     // Try parse the json
     let json = JSON.parse(jsonData);
@@ -200,12 +241,12 @@ function resolveCallbacks(device : SkyTekDevice, jsonData : string){
     // Any message that passes back an "id" is a QUERY type message and we have a single callback which needs to resolve that message
     if(json.hasOwnProperty("id")){
       let uuid = json.id;
-      // Delte the UUID off of the response data
-      delete json.id;
       // Check to see if we have a callback waiting on that message.
       if(callbacks.has(uuid)){
+        // Delete the UUID off of the response data
+        delete json.id;
         // Execute the callback.
-        console.log("[QUERY]", device.port, ":", json);
+        console.log("[QUERY]", (device ? device.port : ""), ":", json);
         callbacks.get(uuid)(json); // call the callback with the data passed.
         // Remove that Callback
         callbacks.delete(uuid);
@@ -214,17 +255,40 @@ function resolveCallbacks(device : SkyTekDevice, jsonData : string){
       }
     }
 
-    // If we get here, we had a generic message with no callbacks. This means it could be a boradcast message, so lets emit that message.
+    // If we get here, we had a generic message with no callbacks. This means it could be a broadcast message, so lets emit that message.
     if(json.hasOwnProperty("topic")){
-      // Construct the Specifc Message topic for this device.
-      let topic = "/"+device.uuid+json.topic;
+      let overrideSender = false;
+      // If this is a relayed command, it is a PUB-SUB coming from a different device.
+      // This means that the device UUID is the remote device's id, not our own.
+      if(json.hasOwnProperty("relay")){
+        // We are supposed to relay this data. So replace the topic's id with the remote device id.
+        overrideSender = json.id;
+        // Now that we know this is a command to be relayed, we can delete the relay properties which we no longer need.
+        delete json.id;
+        delete json.relay;
+      }
+
+      // Determine the topic we will emit.
+      // Construct the specific Message topic.
+      let topic;
+      // Check how we are supposed to handle this PUB-SUB message
+      if(overrideSender){ // This condition indicates a REMOTE relayed message that will be emit globally.
+        // We will emit this globally, therefore we want to echo the specific device id in the message rather than the topic.
+        topic = (json.topic.startsWith("/") ? json.topic : "/"+json.topic); // UUID is included in the data
+        json.uuid = overrideSender; // Add the uuid of the origin device to the data.
+      }else{
+        // This is a specific message being emit from a specific device, without relay.
+        topic = (device ? "/"+device.uuid : "")+json.topic; // UUID is included in message topic.
+      }
+
       // Remove the topic entry from the JSON data
       delete json.topic;
 
       // Print the topic and data that we are about to send.
-      console.log("[PUB-SUB]", topic, ":", json);
+      console.log("["+(overrideSender ? "REMOTE-" : "")+"PUB-SUB]", topic, ":", json);
       // Send this message globally.
       mainWindow.webContents.send(topic, json);
+      
       // Return from this function, we have handled this message.
       return;
     }
@@ -232,6 +296,10 @@ function resolveCallbacks(device : SkyTekDevice, jsonData : string){
   }catch(err){
     // If we get an error say the error.
     if(err instanceof SyntaxError){
+      if(jsonData.startsWith("Error:")){
+        console.log((device ? ("["+device.port+"]") : ""), jsonData);
+        return;
+      }
       console.log("[SYNTAX ERROR]", jsonData);
     }
     return;

@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import Button from '@mui/material/Button';
 
 // Map Imports
-import { Map, Marker, Overlay } from 'pigeon-maps'
+import { Map as PigeonMap, Marker, Overlay } from 'pigeon-maps'
 import { osm } from 'pigeon-maps/providers'
 
 // Import our store
@@ -13,7 +13,7 @@ import { useStore } from 'zustand'
 import { useDeviceStore } from '../api/store/DeviceStore';
 
 // API
-import { query } from '../api/Client';
+import { subscribeGlobal } from '../api/Client';
 
 // Define constants to be referenced below
 
@@ -27,58 +27,50 @@ export type LatLon = {
     lon:number
 }
 
-
 // The component itself.
 const SkyTekMap = ({ height }: Props) => {
 
-  // Devices
-  const deviceStore = useStore(useDeviceStore);
-
   // Position of the devices
-  const [positions, setPositions] = useState<Array<LatLon>>([{lat:42.345280, lon:-71.552193}]);
+  const [positions, setPositions] = useState<Array<LatLon>>(new Array<LatLon>());
+  const [devices, setDevices] = useState<Map<string, LatLon>>(new Map<string, LatLon>());
 
   useEffect(() => {
-    let timer = setInterval(() => {
-      queryGPS();
-    }, 1000);
-    return () => {
-      clearInterval(timer)
-    }
-  }, [deviceStore.devices]);
+    // Here we will subscribe to all GPS messages
+    let subscriber = subscribeGlobal("/gps", (data : JSON) => {
+      if(data.hasOwnProperty("uuid")){
+        //@ts-ignore
+        let device_uuid = data.uuid;
+        let deviceMap = devices;
+        
+        // Update Devices
+        //@ts-ignore
+        deviceMap.set(device_uuid, {lat:data.lat, lon:data.lng});
+        setDevices(deviceMap);
 
-  function queryGPS(){
-    let newPositions : Array<LatLon> = [];
-    let promises = [];
+        console.log(deviceMap);
 
-    for(let device of deviceStore.devices){
-      promises.push(new Promise((resolve, reject) => {
-        query([device, "gps"]).then((data) => {
-          let newPos = {lat:data.lat, lon:-data.lng};
-          setPositions([newPos]);
-        }).catch((err) => {
-          console.log("GPS Error:", err);
-        })
-      }));
-    }
-
-    Promise.all(promises).then((responses) => {
-      // console.log("Response Data:", newPositions) ;
-      for(let response of responses){
-
+        let newPositions = Array<LatLon>();
+        for(let position of deviceMap.values()){
+          newPositions.push(position);
+        }
+        setPositions(newPositions);
       }
-      setPositions(newPositions);
-    })
-  }
+    });
+
+    return () => {
+
+    }
+  }, []);
 
   return (
     <div>
-      <Map center={[42.345280, -71.552193]} zoom={12} width={800} height={600}>
+      <PigeonMap center={[42.345280, -71.552193]} zoom={12} width={800} height={600}>
         {positions.map((position, index) => (<Marker key={index} anchor={[position.lat, position.lon]} payload={1} onClick={({ event, anchor, payload }) => {}} />))}
     
         {/* <Overlay anchor={[position.lat, position.lon]} offset={[120, 79]}>
             <img src='pigeon.jpg' width={240} height={158} alt='' />
         </Overlay> */}
-      </Map>
+      </PigeonMap>
     </div>
   );
 };

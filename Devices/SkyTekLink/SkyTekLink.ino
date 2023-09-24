@@ -24,14 +24,21 @@
 #define COMMAND_START_CHARACTER '/'
 #define COMMAND_END_CHARACTER '\n'
 #define COMMAND_BUFFER_SIZE 64
-// This buffer stores commands that a user might send to the controller.
+
+// This buffer stores commands that a user might send to the controller. Used for RELAY modes.
+#define DATA_END_CHARACTER '}'
 char command_buffer[COMMAND_BUFFER_SIZE] = {'\0'};
 int command_message_index = 0; 
+
+// This buffer stores command responses that may be transmit to a computer over serial.
+#define RESPONSE_BUFFER_SIZE 256
+int response_buffer_index = 0; 
+char response_buffer[RESPONSE_BUFFER_SIZE] = {'\0'};
 
 // UUID for message response handling
 #define UUID_COMMAND_DELIMTER ':'
 #define UUID_SIZE 32
-char uuid_buffer[UUID_SIZE] = {'\0'};
+char query_uuid_buffer[UUID_SIZE+1] = {'\0'};
 
 // [@LoRa#V1] Heartbeat Variables
 #define HEARTBEAT_TRANSMISSION_FREQUENCY 1000000 // This is transmission time in microseconds. value / 1000000 = Hz
@@ -61,13 +68,45 @@ enum FlightComputerState {
 FlightComputerState state = BOOT;
 bool connected_to_cpu = true;
 
+// [@SkyTekCore#V1] Store the ID of this device in Memory, Initialize this value on boot from EEPROM
+char device_uuid[UUID_SIZE + 1] = {'\0'}; // + 1 here is to Null Terminate our string. 
+
 void setup() {
   // Initialize our primary serial communication
   Serial.begin(HOST_SERIAL_SPEED); 
 
-  // Print out the Version.
-  Serial.printf("SkyTek API Version:%s\n", VERSION);
-  Serial.printf("SkyTek Link");
+  // Set the UUID
+  // EEPROM.write( 0, 0xC2);
+  // EEPROM.write( 1, 0x8B);
+  // EEPROM.write( 2, 0xE5);
+  // EEPROM.write( 3, 0xFE);
+  // // -
+  // EEPROM.write( 4, 0x68);
+  // EEPROM.write( 5, 0x0E);
+  // // -
+  // EEPROM.write( 6, 0x43);
+  // EEPROM.write( 7, 0xA1);
+  // // -
+  // EEPROM.write( 8, 0xBE);
+  // EEPROM.write( 9, 0x51);
+  // // -
+  // EEPROM.write(10, 0x0B);
+  // EEPROM.write(11, 0xA4);
+  // EEPROM.write(12, 0x6D);
+  // EEPROM.write(13, 0x06);
+  // EEPROM.write(14, 0xE3);
+  // EEPROM.write(15, 0xFD);
+
+  // Read UUID out of EEPROM
+  for(int i = 0; i < UUID_SIZE / 2; i++){
+    char value = EEPROM.read(i);
+    char upperNibble = value >> 4;
+    char lowerNibble = value & 0B00001111;
+    device_uuid[i * 2 + 0] = upperNibble + (upperNibble < 10 ? '0' : 'A' - 10);
+    device_uuid[i * 2 + 1] = lowerNibble + (lowerNibble < 10 ? '0' : 'A' - 10);
+  }
+
+  Serial.printf("Device UUID:%s\n", device_uuid);
 
   // Init LoRa
   LoRa.setPins(10, 9, 0);
@@ -153,7 +192,7 @@ void setState(FlightComputerState new_state) {
   }
 }
 
-// Command handler to read and process the incomming serial commands from the SkyTek Flight Software.
+// Command handler to read and process the incoming serial commands from the SkyTek Flight Software.
 void parse_serial_command(){
   bool parsing_command = false;
   while(Serial.available()){
@@ -178,14 +217,14 @@ void parse_serial_command(){
           if(uuid_character == COMMAND_END_CHARACTER){
             // We did not get a UUID. clear out the UUID buffer
             for(int i = 0; i < command_message_index; i++){
-              uuid_buffer[i] = '\0'; // Clear the command buffer
+              query_uuid_buffer[i] = '\0'; // Clear the command buffer
             }
             return process_serial_command();
           }
           
           // Process the UUID
           if(command_message_index < UUID_SIZE){
-            uuid_buffer[command_message_index] = uuid_character;
+            query_uuid_buffer[command_message_index] = uuid_character;
             command_buffer[command_message_index] = uuid_character;
             command_message_index++;
           }else{
@@ -217,24 +256,12 @@ void parse_serial_command(){
 }
 
 void process_serial_command(){
-
-  if (strcmp(command_buffer, "capabilities") == 0) {
-    // List available commands
-  } else if (strcmp(command_buffer, "skytek") == 0) {
+  if (strcmp(command_buffer, "skytek") == 0) {
     // List software Version
-    Serial.printf("{\"id\":\"%s\",\"version\":\"%s\"}\n", uuid_buffer, SKYTEK_API_VERSION);
-  } else if (strcmp(command_buffer, "version") == 0) {
-    // List software Version
-    Serial.printf("Board Software Version:%s\n", VERSION);
-  } else if (strcmp(command_buffer, "connected") == 0) {
-    // List Connected Devices
-    Serial.println("Connected Devices:");
-    // RADIO
-    Serial.printf("LoRa Module: %s\n", has_lora ? "Connected" : "Disconnected");
+    Serial.printf("{\"id\":\"%s\",\"uuid\":\"%s\",\"version\":\"%s\"}\n", query_uuid_buffer, device_uuid, SKYTEK_API_VERSION);
   } else {
     Serial.printf("Error: Command '%s' was not recognised.\n", command_buffer);
   }
-
   // Cleanup our buffers to do this again.
   for(int i = 0; i < command_message_index; i++){
     command_buffer[i] = '\0';
@@ -247,34 +274,45 @@ void parse_lora(){
   int packetSize = LoRa.parsePacket();
   if (packetSize) {
     // received a packet
-    Serial.print("Received packet '");
+    // Serial.print("Received packet '");
 
     // read packet
-    while (LoRa.available()) {
-      Serial.print((char)LoRa.read());
+    response_buffer_index = 0;
+    while (LoRa.available() && response_buffer_index < RESPONSE_BUFFER_SIZE) {
+      // Store the message
+      char packet_character = (char)LoRa.read();
+
+      // If we have not hit an escape character, append the new character to our string.
+      response_buffer[response_buffer_index] = packet_character;
+
+      // If we are at the end, continue
+      if(packet_character == DATA_END_CHARACTER){
+        break;
+      } else {
+        // Increment our counter and continue
+        response_buffer_index++;
+      }
+    }
+    // We need to inject the attribute 'relay' into this message.
+    if(true){ // If this device is acting as a relay
+      // Replace the '}' with a Null Terminator
+      response_buffer[response_buffer_index] = '\0';
+      // Print this as a relay message.
+      Serial.printf("%s,\"relay\":true}\n", response_buffer);
+    }else{
+      // Print the message normally
+      Serial.printf("%s\n", response_buffer);
     }
 
-    // print RSSI of packet
-    Serial.print("' with RSSI ");
-    Serial.println(LoRa.packetRssi());
-    Serial.print("' with Snr ");
-    Serial.println(LoRa.packetSnr());
+    // Here we need to clear the buffer content for the next message.
+    for(int i = 0; i < response_buffer_index; i++){
+      response_buffer[i] = '\0';
+    }
+
+    // // print RSSI of packet
+    // Serial.print("' with RSSI ");
+    // Serial.println(LoRa.packetRssi());
+    // Serial.print("' with Snr ");
+    // Serial.println(LoRa.packetSnr());
   }
 }
-
-struct SkyTekMessageField {
-  char* fieldName;
-  
-}
-
-// These are helper functions for publishing messages
-void publish(){
-  Serial.printf("{\"topic\":\"%s\",\"msg\":%d}\n", "/heartbeat", heartbeats);
-}
-
-
-// This is a map to store connected devices
-#define MAX_DEVICES 16
-int devices = 0;
-char keys[MAX_DEVICES][32]
-

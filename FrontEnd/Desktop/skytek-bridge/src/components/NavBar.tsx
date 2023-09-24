@@ -44,14 +44,13 @@ const NavBar = ({}: Props) => {
             <MenuIcon />
           </IconButton> */}
 
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          {/* Display The Application Name */}
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} style={{minWidth:'128px'}}>
             SkyTek Bridge
           </Typography>
 
-          {deviceStore.selected ? JSON.stringify(deviceStore.selected) : null}
-
           {/* The Heartbeat Dot */}
-          {deviceStore.selected ? <PulseDot shouldPulse={false}></PulseDot> : null}
+          {deviceStore.selected ? <PulseDot device={deviceStore.selected}></PulseDot> : null}
 
           {/* <Button color="inherit">Login</Button> */}
         </Toolbar>

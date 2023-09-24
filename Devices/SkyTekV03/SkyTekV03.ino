@@ -39,7 +39,7 @@ int command_message_index = 0;
 // UUID for message response handling
 #define UUID_COMMAND_DELIMTER ':'
 #define UUID_SIZE 32
-char uuid_buffer[UUID_SIZE] = {'\0'};
+char query_uuid_buffer[UUID_SIZE + 1] = {'\0'}; // Extra 1 for Null Terminator
 
 
 // set this to the hardware serial port you wish to use
@@ -162,8 +162,8 @@ enum Units {
 enum FlightComputerState {
   CONFIGURATION,        // The flight computer is connected to the host software for configuration mode.
   BOOT,                 // Initialization Stuff
-  SEARCH_GPS,           // Search For sattelitesx
-  SEARCH_BASE_STATION,  // Search for a Base Station -Maybe this can happen during sattelite search
+  SEARCH_GPS,           // Search For satellites
+  SEARCH_BASE_STATION,  // Search for a Base Station -Maybe this can happen during satellite search
   FLIGHT_CONFIG,        // Once connected to base station, let user configure rocket for this flight.
   STANDBY,              // Wait for Rocket to be on the pad in the Upright direction
   SELECT_ROCKET
@@ -173,9 +173,48 @@ enum FlightComputerState {
 FlightComputerState state = BOOT;
 bool connected_to_cpu = true;
 
+// [@SkyTekCore#V1] Store the ID of this device in Memory, Initialize this value on boot from EEPROM
+char device_uuid[UUID_SIZE + 1] = {'\0'}; // + 1 here is to Null Terminate our string. 
+
 void setup() {
   // Initialize our primary serial communication
   Serial.begin(HOST_SERIAL_SPEED); 
+
+  // Print out the Version.
+  Serial.printf("SkyTek controller Version:%s\n", VERSION);
+
+  // Set the UUID
+  // EEPROM.write( 0, 0xC2);
+  // EEPROM.write( 1, 0x8B);
+  // EEPROM.write( 2, 0xE5);
+  // EEPROM.write( 3, 0xFE);
+  // // -
+  // EEPROM.write( 4, 0x68);
+  // EEPROM.write( 5, 0x0E);
+  // // -
+  // EEPROM.write( 6, 0x43);
+  // EEPROM.write( 7, 0xA1);
+  // // -
+  // EEPROM.write( 8, 0xBE);
+  // EEPROM.write( 9, 0x51);
+  // // -
+  // EEPROM.write(10, 0x0B);
+  // EEPROM.write(11, 0xA4);
+  // EEPROM.write(12, 0x6D);
+  // EEPROM.write(13, 0x06);
+  // EEPROM.write(14, 0xE3);
+  // EEPROM.write(15, 0xFD);
+
+  // Read UUID out of EEPROM
+  for(int i = 0; i < UUID_SIZE / 2; i++){
+    char value = EEPROM.read(i);
+    char upperNibble = value >> 4;
+    char lowerNibble = value & 0B00001111;
+    device_uuid[i * 2 + 0] = upperNibble + (upperNibble < 10 ? '0' : 'A' - 10);
+    device_uuid[i * 2 + 1] = lowerNibble + (lowerNibble < 10 ? '0' : 'A' - 10);
+  }
+
+  Serial.printf("Device UUID:%s\n", device_uuid);
 
   // Initialize RGB LED
   pixels.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
@@ -186,9 +225,6 @@ void setup() {
   NEMA_GPS.begin(GPS_SERIAL_SPEED);
   while (!NEMA_GPS); // Wait for NEMA_GPS serial to start.
   has_gps = true;
-
-  // Print out the Version.
-  Serial.printf("SkyTek controller Version:%s\n", VERSION);
 
   // Here we check to see if we have a serial connection on this port. If we do we put the controller into a settings mode that allows it to process commands.
   // if(Serial){
@@ -332,7 +368,7 @@ void loop() {
     }
   }
 
-  // Independant of Mode send the radio pings.
+  // Independent of Mode send the radio pings.
 
   // Heartbeat if it is time to
   heartbeat(now);
@@ -403,7 +439,7 @@ void setState(FlightComputerState new_state) {
   }
 }
 
-// Command handler to read and process the incomming serial commands from the SkyTek Flight Software.
+// Command handler to read and process the incoming serial commands from the SkyTek Flight Software.
 void parse_serial_command(){
   bool parsing_command = false;
   while(Serial.available()){
@@ -428,14 +464,14 @@ void parse_serial_command(){
           if(uuid_character == COMMAND_END_CHARACTER){
             // We did not get a UUID. clear out the UUID buffer
             for(int i = 0; i < command_message_index; i++){
-              uuid_buffer[i] = '\0'; // Clear the command buffer
+              query_uuid_buffer[i] = '\0'; // Clear the command buffer
             }
             return process_serial_command();
           }
           
           // Process the UUID
           if(command_message_index < UUID_SIZE){
-            uuid_buffer[command_message_index] = uuid_character;
+            query_uuid_buffer[command_message_index] = uuid_character;
             command_buffer[command_message_index] = uuid_character;
             command_message_index++;
           }else{
@@ -467,11 +503,9 @@ void parse_serial_command(){
 }
 
 void process_serial_command(){
-  if (strcmp(command_buffer, "help") == 0) {
-    // List available commands
-  } else if (strcmp(command_buffer, "skytek") == 0) {
+  if (strcmp(command_buffer, "skytek") == 0) {
     // List software Version
-    Serial.printf("{\"id\":\"%s\",\"version\":\"%s\"}\n", uuid_buffer, SKYTEK_API_VERSION);
+    Serial.printf("{\"id\":\"%s\",\"uuid\":\"%s\",\"version\":\"%s\"}\n", query_uuid_buffer, device_uuid, SKYTEK_API_VERSION);
   } else if (strcmp(command_buffer, "version") == 0) {
     // List software Version
     Serial.printf("Board Software Version:%s\n", VERSION);
@@ -513,7 +547,7 @@ void process_serial_command(){
     Serial.printf("GPS Accelerometer: %s\n", has_accel ? "Connected" : "Disconnected");
 
   } else if (strcmp(command_buffer, "gps") == 0) {
-    Serial.printf("{\"id\":\"%s\",\"lat\":%f,\"lng\":%f}\n", uuid_buffer, gps_lat, gps_lng);
+    Serial.printf("{\"id\":\"%s\",\"lat\":%f,\"lng\":%f}\n", query_uuid_buffer, gps_lat, gps_lng);
   }else {
     Serial.printf("Error: Command '%s' was not recognised.\n", command_buffer);
   }
@@ -523,12 +557,12 @@ void process_serial_command(){
   }
 }
 
-// This is a blocking function which reads in all incomming data from the UART connected to the NEMA GPS board and updates our lat and lng positions.
+// This is a blocking function which reads in all incoming data from the UART connected to the NEMA GPS board and updates our lat and lng positions.
 void check_gps() {
   if(!has_lora){
     return;
   }
-  // Take in all incomming characters from the GPS.
+  // Take in all incoming characters from the GPS.
   while (NEMA_GPS.available()) {
     char gps_character = (char)NEMA_GPS.read();
 
@@ -557,7 +591,7 @@ void check_gps() {
 }
 
 /**
-  This function processes the NEMA GPS string that we recived from space.
+  This function processes the NEMA GPS string that we received from space.
 */
 void process_gps_message(char* gps_message){
   int index = index_of(gps_message, ',');
@@ -762,7 +796,7 @@ bool is_valid_message(char* nema_sentence, const char* expected_sentence, char* 
 
 // Radio functions
 void send_lora(){
-  // If we dont have a LoRa module return from thnis function.
+  // If we dont have a LoRa module return from this function.
   if(!has_lora){
     return;
   }
@@ -775,7 +809,8 @@ void send_lora(){
 
   // Start and send our LoRa packet to the base station.
   LoRa.beginPacket();
-  LoRa.print(lora_packet);
+  // Broadcast update to a Capabilitie's Variable
+  LoRa.printf("{\"id\":\"%s\",\"topic\":\"/gps\",\"lat\":%f,\"lng\":%f}", device_uuid, gps_lat, gps_lng);
   LoRa.endPacket();
 }
 
@@ -839,11 +874,11 @@ void calibrateBMP(){
   for(int i = 0 ; i < samples; i++){
     delay(1000 / samples);
     float value = bmp.readAltitude(SEALEVELPRESSURE_HPA);
-    Serial.print("test Elivation: "); Serial.println(value);
+    Serial.print("Test Elevation: "); Serial.println(value);
     height += value;
   }
   base_altitude = height / samples;
-  Serial.print("Starting Elivation: "); Serial.println(base_altitude);
+  Serial.print("Starting Elevation: "); Serial.println(base_altitude);
 }
 
 /**

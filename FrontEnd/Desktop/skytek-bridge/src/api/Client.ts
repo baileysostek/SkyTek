@@ -128,6 +128,10 @@ function addEvent(device : SkyTekDevice, listener : SkyTekSubscriber){
   }
   eventListeners.get(device).push(listener);
 }
+const globalEventListeners = Array<SkyTekSubscriber>();
+function addGlobalEvent(listener : SkyTekSubscriber){
+  globalEventListeners.push(listener);
+}
 
 /**
  * This function allows us to register interest in a specifc device message. 
@@ -152,6 +156,33 @@ export function subscribe(device : SkyTekDevice, topic : string, callback : (dat
 
   // Store this subscriber in our map of eventListeners
   addEvent(device, subscriber);
+
+  // Return this subscriber
+  return subscriber;
+}
+
+/**
+ * This allows a user to subscribe to a global topic, rather than a message from a specific device.
+ * @param topic 
+ * @param callback 
+ * @returns 
+ */
+export function subscribeGlobal(topic : string, callback : (data : JSON | null) => void) : SkyTekSubscriber {
+  // Create a new subscriber
+  let subscriber : SkyTekSubscriber = {
+    id : uuidv4(),
+    topic : (topic.startsWith("/") ? topic : "/" + topic),
+    autoCleanup: true,
+    listener : (_event, data) => {
+      callback(data);
+    }
+  }
+
+  // Register this subscriber with IPC
+  ipcRenderer.on(subscriber.topic, subscriber.listener);
+
+  // Store this subscriber in our map of eventListeners
+  addGlobalEvent(subscriber);
 
   // Return this subscriber
   return subscriber;
