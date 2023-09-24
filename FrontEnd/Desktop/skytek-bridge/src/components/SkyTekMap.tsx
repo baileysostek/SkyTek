@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 // Styling - Material UI
 import Button from '@mui/material/Button';
 
+import AutoSizer from "react-virtualized-auto-sizer";
+
 // Map Imports
 import { Map as PigeonMap, Marker, Overlay } from 'pigeon-maps'
 import { osm } from 'pigeon-maps/providers'
@@ -44,10 +46,8 @@ const SkyTekMap = ({ height }: Props) => {
         
         // Update Devices
         //@ts-ignore
-        deviceMap.set(device_uuid, {lat:data.lat, lon:data.lng});
+        deviceMap.set(device_uuid, {lat:data.lat, lon:-data.lng});
         setDevices(deviceMap);
-
-        console.log(deviceMap);
 
         let newPositions = Array<LatLon>();
         for(let position of deviceMap.values()){
@@ -63,14 +63,18 @@ const SkyTekMap = ({ height }: Props) => {
   }, []);
 
   return (
-    <div>
-      <PigeonMap center={[42.345280, -71.552193]} zoom={12} width={800} height={600}>
-        {positions.map((position, index) => (<Marker key={index} anchor={[position.lat, position.lon]} payload={1} onClick={({ event, anchor, payload }) => {}} />))}
-    
-        {/* <Overlay anchor={[position.lat, position.lon]} offset={[120, 79]}>
-            <img src='pigeon.jpg' width={240} height={158} alt='' />
-        </Overlay> */}
-      </PigeonMap>
+    <div style={{width:'100%', height:'100%', backgroundColor:'#b5d1de', overflow:'hidden'}}>
+      <AutoSizer>
+        {({ height, width }) => (
+          <PigeonMap center={[42.345280, -71.552193]} zoom={12} width={width} height={height}>
+            {positions.map((position, index) => (<Marker key={index} anchor={[position.lat, position.lon]} payload={1} onClick={({ event, anchor, payload }) => {}} />))}
+
+            {/* <Overlay anchor={[position.lat, position.lon]} offset={[120, 79]}>
+                <img src='pigeon.jpg' width={240} height={158} alt='' />
+            </Overlay> */}
+          </PigeonMap>
+        )}
+      </AutoSizer>
     </div>
   );
 };

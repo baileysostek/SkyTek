@@ -23,9 +23,7 @@ const DeviceDashboard = ({}: Props) => {
   const deviceStore = useStore(useDeviceStore);
 
   return (
-  <div>
     <SkyTekMap height={100}></SkyTekMap>
-  </div>
   );
 };
 
