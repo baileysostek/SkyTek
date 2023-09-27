@@ -14,6 +14,7 @@ import { subscribe } from '../api/Client';
 import { SkyTekDevice } from '../types';
 import PulseDot from './PulseDot';
 import { width } from '@mui/system';
+import { Grid } from '@mui/material';
 
 interface Props {
   device: SkyTekDevice;
@@ -24,16 +25,15 @@ const DeviceStatus = ({ device }: Props) => {
     <div style={{border:"2px solid", borderColor:"#202020", borderRadius:"24px", overflow:"hidden"}}>
       <ListItem onMouseEnter={() => {}}>
         <ListItemAvatar>
-          <Avatar>
-            <RocketIcon/>
-          </Avatar>
+          <PulseDot device={device}>
+            <RocketIcon style={{width:'80%', height:'80%', marginLeft:'10%', marginTop:'10%'}}/>
+          </PulseDot>
         </ListItemAvatar>
         <ListItemText
           style={{minWidth:'128px'}}
           primary={"Port:" + device.port}
           secondary={true ? "SkyTek Version 0.1" : null}
         />
-        <PulseDot device={device} />
       </ListItem>
     </div>
   );

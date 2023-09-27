@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { SkyTekDevice } from '../types';
 import { subscribe } from '../api/Client';
 
 interface Props {
+  children:ReactNode | null;
   device: SkyTekDevice;
 }
 
 const WATCHDOG_TIMER = 1250;
 
-const PulseDot = ({ device }: Props) => {
+const PulseDot = ({ children, device }: Props) => {
 
   // We want to be able to tell our PulseDot to pulse so we need to hold a reference to a variable to indicate pulse
   const [shouldPulse, setShouldPulse] = useState<boolean>(false);
@@ -59,10 +60,8 @@ const PulseDot = ({ device }: Props) => {
   }, [shouldPulse]);
 
   return (
-    <div>
-      <div style={{width:32, height:32, borderRadius:16, backgroundColor: ((unresponsive) ? "#FF9900" : (shouldPulse ? '#AAFFAA' : '#116622'))}}>
-
-      </div>
+    <div style={{width:48, height:48, borderRadius:'50%', backgroundColor: ((unresponsive) ? "#FF9900" : (shouldPulse ? '#AAFFAA' : '#116622'))}}>
+      {children}
     </div>
   );
 };

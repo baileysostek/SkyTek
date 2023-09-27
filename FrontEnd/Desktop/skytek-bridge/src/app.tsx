@@ -1,16 +1,14 @@
-import { Button } from '@mui/material';
+import React from 'react';
+import './App.css';
+
 import * as ReactDOM from 'react-dom';
-import { getDevices, setRouter } from './api/Client';
+import { setRouter } from './api/Client';
 
-import DeviceList from './components/DeviceList';
-import SkyTekMap from './components/SkyTekMap';
-
-// Import our rotuer here
+// Import our router here
 import {
   createHashRouter,
   RouterProvider,
 } from "react-router-dom";
-import React from 'react';
 
 import AvailableDevices from './routes/AvailableDevices';
 import NavBar from './components/NavBar';
@@ -43,7 +41,7 @@ ReactDOM.render(
     {/* Navbar and Sidebar */}
     <NavBar></NavBar>
     {/* Content */}
-    <div style={{width:'100%'}}>
+    <div className='AppContent'>
       <div style={{marginTop:'64px', width:'100vw', height:'calc(100vh - 64px)', backgroundColor:'char'}}>
         <React.StrictMode>
           <RouterProvider router={router} />  

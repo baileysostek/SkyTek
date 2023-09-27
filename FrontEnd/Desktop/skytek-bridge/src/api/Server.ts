@@ -71,7 +71,7 @@ export function discover():  Promise<Array<SkyTekDevice>> {
         // Push new promise onto our array of promises to execute
         connections.push(new Promise((resolve, reject) => {
           // Create a connection to that serial port. 
-          const port = new SerialPort({ path: portPath, baudRate:9600 }, (err) => {
+          const port = new SerialPort({ path: portPath, baudRate:115200 }, (err) => {
             // console.log("Port Creation Error:", err); // Sometimes we wont be able to talk to the serial port, if that is the case return.
             return resolve("Error: Could not open connection to device.");
           });
@@ -270,25 +270,16 @@ function resolveCallbacks(device : SkyTekDevice | null, jsonData : string){
 
       // Determine the topic we will emit.
       // Construct the specific Message topic.
-      let topic;
-      // Check how we are supposed to handle this PUB-SUB message
-      if(overrideSender){ // This condition indicates a REMOTE relayed message that will be emit globally.
-        // We will emit this globally, therefore we want to echo the specific device id in the message rather than the topic.
-        topic = (json.topic.startsWith("/") ? json.topic : "/"+json.topic); // UUID is included in the data
-        json.uuid = overrideSender; // Add the uuid of the origin device to the data.
-      }else{
-        // This is a specific message being emit from a specific device, without relay.
-        topic = (device ? "/"+device.uuid : "")+json.topic; // UUID is included in message topic.
-      }
-
+      let topic = (json.topic.startsWith("/") ? json.topic : "/"+json.topic);
       // Remove the topic entry from the JSON data
       delete json.topic;
 
-      // Print the topic and data that we are about to send.
-      console.log("["+(overrideSender ? "REMOTE-" : "")+"PUB-SUB]", topic, ":", json);
-      // Send this message globally.
-      mainWindow.webContents.send(topic, json);
-      
+      // Store the UUID of the device that this message originated on.
+      let messageOrigin = device.uuid;
+
+      // Send the message
+      publishMessageOnTopic(topic, json, messageOrigin, overrideSender);
+
       // Return from this function, we have handled this message.
       return;
     }
@@ -304,9 +295,29 @@ function resolveCallbacks(device : SkyTekDevice | null, jsonData : string){
     }
     return;
   }
-
   // If we got here we had an error parsing the message we got back from the SkyTek device.
 }
+
+function publishMessageOnTopic(topic : string, message: JSON, messageOrigin : string, overrideSender : boolean){
+  // Emit the specific message
+  if(!overrideSender){
+    // This is the specific topic.
+    let specificTopic = "/" + messageOrigin + topic;
+    // Print the topic and message
+    console.log("["+(overrideSender ? "REMOTE-" : "")+"PUB-SUB]", specificTopic, ":", message);
+    // Send this message globally.
+    mainWindow.webContents.send(specificTopic, message);
+  }
+
+  // Print the topic and data that we are about to send.
+  console.log("["+(overrideSender ? "REMOTE-" : "")+"PUB-SUB]", topic, ":", message);
+  // Emit the global message (done in all cases)
+  //@ts-ignore
+  message.uuid = messageOrigin; // Add the uuid of the device which this message originated from.
+  // Send this message globally.
+  mainWindow.webContents.send(topic, message);
+}
+
 function addDevice(portPath : string, device : ControlledSkyTekDevice){
   devices.set(portPath, device); // Add the device
   // Send an IPC message to remove this device.

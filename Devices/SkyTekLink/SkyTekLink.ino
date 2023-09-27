@@ -298,7 +298,7 @@ void parse_lora(){
       // Replace the '}' with a Null Terminator
       response_buffer[response_buffer_index] = '\0';
       // Print this as a relay message.
-      Serial.printf("%s,\"relay\":true}\n", response_buffer);
+      Serial.printf("%s,\"relay\":true,\"rssi\":%d}\n", response_buffer, LoRa.packetRssi());
     }else{
       // Print the message normally
       Serial.printf("%s\n", response_buffer);

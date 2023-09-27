@@ -373,6 +373,8 @@ void loop() {
   // Heartbeat if it is time to
   heartbeat(now);
 
+  // As fast as possible
+  // Serial.printf("{\"id\":\"%s\",\"topic\":\"/altitude\",\"alt\":%f}\n", device_uuid, gps_lat);
 
   // digitalWrite(33, gps_lock);
 
@@ -811,6 +813,7 @@ void send_lora(){
   LoRa.beginPacket();
   // Broadcast update to a Capabilitie's Variable
   LoRa.printf("{\"id\":\"%s\",\"topic\":\"/gps\",\"lat\":%f,\"lng\":%f}", device_uuid, gps_lat, gps_lng);
+  Serial.printf("{\"topic\":\"/gps\",\"lat\":%f,\"lng\":%f}\n", gps_lat, gps_lng);
   LoRa.endPacket();
 }
 
