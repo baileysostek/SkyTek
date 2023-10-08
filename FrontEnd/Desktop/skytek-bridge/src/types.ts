@@ -5,12 +5,16 @@ export class SkyTekDevice {
   // These properties are published about the device. 
   name : string;
   port : string;
-  capabilities : Array<SkyTekCapability>[]; 
+  capabilities : Array<string> = new Array<string>(); 
 
   // Things the device can do
   constructor(uuid: string, port : string){
     this.uuid = uuid;
     this.port = port;
+  }
+
+  addCapability(capability : string){
+    this.capabilities.push(capability);
   }
 }
 
@@ -23,17 +27,6 @@ export class SkyTekDevice {
 // - Position    - This Device Can know its GPS Position
 // - Acceleration- This device knows its XYZ ACC
 // - Altitude    - This Device knows its altitude
-
-// This is the 
-export class SkyTekCapability{
-  // Properties
-  name : string;
-
-  constructor(capability_name : string){
-    this.name = capability_name;
-
-  }
-}
 
 // Errors
 export class SkyTekError{

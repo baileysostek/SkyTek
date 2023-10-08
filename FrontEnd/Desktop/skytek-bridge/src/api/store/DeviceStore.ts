@@ -11,6 +11,9 @@ interface DeviceStore {
   selected: SkyTekDevice | null;
   selectDevice: (device : SkyTekDevice) => void;
   deselectDevice: () => void;
+
+  capabilities : Array<string>;
+  setCapabilities : (capabilities : Array<string>) => void
 }
 
 export const useDeviceStore = createStore<DeviceStore>((set) => ({
@@ -20,4 +23,7 @@ export const useDeviceStore = createStore<DeviceStore>((set) => ({
   selected : null,
   selectDevice: (device : SkyTekDevice) => set({selected : device}),
   deselectDevice: () => set({selected : null}),
+
+  capabilities: [],
+  setCapabilities: (capabilities : Array<string>) => set({capabilities : capabilities}),
 }))

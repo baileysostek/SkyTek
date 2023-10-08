@@ -196,3 +196,11 @@ export function setRouter(theRouter : any){
 export function navigate(path : string) : void {
   router.navigate(path);
 }
+
+
+/**
+ *  
+ */
+ipcRenderer.on("/getRegisteredCapabilities", (_event, capabilityHandlers : Array<string>) => {
+  useDeviceStore.getState().setCapabilities(capabilityHandlers);
+});

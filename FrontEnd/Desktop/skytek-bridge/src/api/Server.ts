@@ -8,6 +8,17 @@ import { SkyTekDevice } from "../types";
 import { ipcMain } from "electron";
 import { log } from "./logging/Logger";
 
+// Import FS
+import * as fs from "fs";
+
+// Import Mustache for substitution.
+import Mustache from 'mustache';
+
+// Define constants for capabilities
+const CAPABILITIES_DIRECTORY_PATH = "./src/components/capabilities/"; // Relative Path to Base
+const CAPABILITY_PREFIX = "SkyTek_"; // Prefix for files.
+const CAPABILITY_EXTENSION = ".tsx";
+
 // Define any constants here
 const COMMAND_START_CHARACTER = '/';
 const COMMAND_END_CHARACTER = '\n';
@@ -36,13 +47,32 @@ type SkyTekInitializationResponse = {
 
 let interval : NodeJS.Timeout | null = null;
 ipcMain.handle("/onLoad", () => {
+  init(); // When the application loads, init the Server.
+});
+
+//TODO:singleton
+function init(){
   if(interval){
     clearInterval(interval);
   }
   interval = setInterval(() => {
     discover();
   }, 1000)
-});
+
+
+  let capabilitiesContent = fs.readdirSync(CAPABILITIES_DIRECTORY_PATH);
+  let capabilities = [];
+  for(let file of capabilitiesContent){
+    if(file.startsWith(CAPABILITY_PREFIX)){
+      let capabilityName = file.replace(CAPABILITY_PREFIX, "").replace(CAPABILITY_EXTENSION, "");
+      capabilities.push(capabilityName);
+    }
+  }
+
+  console.log("Capability Handlers discovered:", capabilities);
+
+  mainWindow.webContents.send("/getRegisteredCapabilities", capabilities);
+}
 
 export function discover():  Promise<Array<SkyTekDevice>> {
   // We dont know how long this function will take to return, so we will return a promise that we can then observe the lifecycle of.
@@ -114,26 +144,27 @@ export function discover():  Promise<Array<SkyTekDevice>> {
               // We received data from our SkyTek device
               console.log(portPath, "data:", data);
               
-              // Once confirmed that we are talking with a skytek device, we create an instance of that device with the capabilities the device says it has.
+              // Once confirmed that we are talking with a SkyTek device, we create an instance of that device with the capabilities the device says it has.
               let device_uuid;
               if(data.hasOwnProperty("uuid")){
                 //@ts-ignore // TODO: cast the JSON returned to an expected type.
                 device_uuid = data.uuid;
-                console.log("Warning: SkyTek device does not define ID");
               }else{
                 device_uuid = uuidv4();
+                console.log("Warning: SkyTek device does not define ID");
               }
 
               // Create our SkyTek device.
               let device = new SkyTekDevice(device_uuid, portPath);
 
-              // Add this new device to our map of devices. Our internal heartbeat loop will monitor connection status and state changes automatically.
-              addDevice(portPath, {
+              // At this point we have a device
+              // Keep track of it in our list of devices
+              devices.set(portPath, {
                 port : port,
                 parser : parser,
                 device : device,
                 callback : null,
-              });
+              }); 
 
               // Now we need to remove the old listener
               parser.removeListener('data', requestResponseListener); // Remove old Listener
@@ -150,7 +181,41 @@ export function discover():  Promise<Array<SkyTekDevice>> {
                 removeDevice(device);
               });
 
-              return resolve(device);
+              // At this point we have a valid SkyTek device, lets get its capabilities
+              query(device, "capabilities").then((data) => {
+                if(data.hasOwnProperty("capabilities")){
+                  //@ts-ignore - We have ensured that this property does in fact exist.
+                  for(let capability of data.capabilities){
+                    console.log("Searching for capability:", capability);
+
+                    device.addCapability(capability);
+
+                    //TODO load code here telling the FrontEnd what component it should try to render.
+
+                    // let capabilityCode = require(
+                    //   Mustache.render(
+                    //     "{{{CAPABILITIES_DIRECTORY_PATH}}}{{{CAPABILITY_PREFIX}}}{{{capability}}}{{{CAPABILITY_EXTENSION}}}",
+                    //     {
+                    //       CAPABILITIES_DIRECTORY_PATH,
+                    //       CAPABILITY_PREFIX,
+                    //       capability,
+                    //       CAPABILITY_EXTENSION
+                    //     }
+                    //   )
+                    // );
+                    
+                    // console.log(capabilityCode);
+                  }
+                }
+              }).catch((err) => {
+                console.log("Error reading capabilities:", err);
+              }).finally(() => { // No matter how the promise resolves, return the new device.
+                // We have configured this device and retrieved as much information about its state as possible, broadcast the capabilites and existance of this device.
+                // Broadcast Device Available
+                broadcastDeviceAvailable(device);
+                // Resolve this promise.
+                return resolve(device);
+              })
             })
           });
         }));  
@@ -317,12 +382,11 @@ function publishMessageOnTopic(topic : string, message: JSON, messageOrigin : st
   mainWindow.webContents.send(topic, message);
 }
 
-function addDevice(portPath : string, device : ControlledSkyTekDevice){
-  devices.set(portPath, device); // Add the device
+function broadcastDeviceAvailable(device : SkyTekDevice){
   // Send an IPC message to remove this device.
-  mainWindow.webContents.send("/addDevice", device.device);
+  mainWindow.webContents.send("/addDevice", device);
 
-  log("Added Device"+device.device);
+  log("Added Device"+device);
 }
 
 function removeDevice(skyTekDevice : SkyTekDevice){

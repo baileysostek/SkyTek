@@ -10,6 +10,7 @@ import Grid from '@mui/material/Grid';
 
 // Import other Components
 import DeviceList from '../components/DeviceList';
+import { useEffect } from 'react';
 
 // Types
 interface Props {
@@ -25,7 +26,7 @@ const AvailableDevices = ({}: Props) => {
   const Demo = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
   }));
-
+  
   return (
     <Grid container spacing={2} style={{width:'100%', textAlign:'center', margin:'0px'}}>
       <Grid item xs={12}>

@@ -14,6 +14,9 @@
 #define SKYTEK_API_VERSION "1.0"
 #define VERSION "0.3" // Board Software Version
 
+// Define a list of capabilities
+#define SKYTEK_CAPABILTIES "[\"gps\", \"lora_send\", \"rgb_led\"]"
+
 // Define our Serial speeds.
 #define HOST_SERIAL_SPEED 115200
 #define GPS_SERIAL_SPEED 9600
@@ -529,25 +532,9 @@ void process_serial_command(){
     // ACCELEROMETER
     Serial.printf("Accelerometer Accelerometer: %s\n", has_accel ? "Connected" : "Disconnected");
 
-  } else if (strcmp(command_buffer, "reconnect") == 0) {
-    // List Connected Devices
-    Serial.println("Attempting to reconnect to Devices:");
-    // GPS
-    Serial.printf("GPS Module: %s\n", has_gps ? "Connected" : "Disconnected");
-    // RADIO
-    Serial.printf("LoRa Module: %s\n", has_lora ? "Connected" : "Disconnected");
-    // SCREEN
-    Serial.printf("Screen Module: %s\n", has_screen ? "Connected" : "Disconnected");
-    // PYRO 1
-
-    // PYRO 2
-
-    // BMP
-    init_bmp();
-    Serial.printf("GPS Module: %s\n", has_bmp ? "Connected" : "Disconnected");
-    // ACCELEROMETER
-    Serial.printf("GPS Accelerometer: %s\n", has_accel ? "Connected" : "Disconnected");
-
+  } else if (strcmp(command_buffer, "capabilities") == 0) {
+    // Query response listing all of our capabilities.
+    Serial.printf("{\"id\":\"%s\",\"uuid\":\"%s\",\"capabilities\":%s}\n", query_uuid_buffer, device_uuid, SKYTEK_CAPABILTIES); // Substitute our capabilities in as a literal array.
   } else if (strcmp(command_buffer, "gps") == 0) {
     Serial.printf("{\"id\":\"%s\",\"lat\":%f,\"lng\":%f}\n", query_uuid_buffer, gps_lat, gps_lng);
   }else {
