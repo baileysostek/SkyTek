@@ -626,19 +626,19 @@ void process_gps_message(char* gps_message){
     if(gps_lock){
       char degree_minute_buffer[NEMA_ARGUMENT_BUFFER_SIZE];
 
-      // N or S
+      // North or South
       gps_parse_string(nema_data, 2);
       // Serial.printf("Lat1:%s\n" , nema_argument_buffer);
       strcpy(degree_minute_buffer, nema_argument_buffer);
       // Serial.printf("Lat2:%s\n" , degree_minute_buffer);
-      gps_parse_string(nema_data, 3);
+      gps_parse_string(nema_data, 3); // N or S
       // Serial.printf("Lat3:%s\n" , nema_argument_buffer);
       gps_lat = gps_to_decimal_degrees(degree_minute_buffer, nema_argument_buffer);
 
-      // E or W
+      // East or West
       gps_parse_string(nema_data, 4);
       strcpy(degree_minute_buffer, nema_argument_buffer);
-      gps_parse_string(nema_data, 5);
+      gps_parse_string(nema_data, 5); // E or W
       gps_lng = gps_to_decimal_degrees(degree_minute_buffer, nema_argument_buffer);
 
       // Serial.printf("Lat%f:\n" , gps_lat);
@@ -713,8 +713,12 @@ float gps_to_decimal_degrees(char* nema_position, char* quadrant){
 
   pos = atof(degrees) + (atof(minutes) / 60.0);
   // Serial.printf("Pos:%f\n", pos);
+
+  // Here we determine if we need to invert the value or not based on quadrant.
+  bool invert = (*quadrant == 'S') || (*quadrant == 'E');
   
-  return pos;
+  // Return the position inverted such that the reported lat/lon values are correct.
+  return invert ? -pos : pos;
 }
 
 void clear_nema_argument_buffer(){
@@ -763,7 +767,7 @@ bool gps_parse_string(char* gps_message, int index){
     if(cur_index == index){
       nema_argument_buffer[argument_length] = *search_index;
       argument_length++;
-      if(argument_length >= NEMA_ARGUMENT_BUFFER_SIZE){ // TODO 16 here should be a constant.
+      if(argument_length >= NEMA_ARGUMENT_BUFFER_SIZE){
         return false;
       }
     }
@@ -811,7 +815,7 @@ void send_lora(){
 
   // Start and send our LoRa packet to the base station.
   LoRa.beginPacket();
-  // Broadcast update to a Capabilitie's Variable
+  // Broadcast update to a Capabilitie's Variable //TODO; generate response string in the same way as the query-response commands/
   LoRa.printf("{\"id\":\"%s\",\"topic\":\"/gps\",\"lat\":%f,\"lng\":%f}", device_uuid, gps_lat, gps_lng);
   Serial.printf("{\"topic\":\"/gps\",\"lat\":%f,\"lng\":%f}\n", gps_lat, gps_lng);
   LoRa.endPacket();

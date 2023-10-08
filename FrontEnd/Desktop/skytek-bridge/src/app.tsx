@@ -1,5 +1,5 @@
 import React from 'react';
-import './App.css';
+import './app.css';
 
 import * as ReactDOM from 'react-dom';
 import { setRouter } from './api/Client';

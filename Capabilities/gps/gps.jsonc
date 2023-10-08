@@ -2,6 +2,10 @@
     // Metadata
     "name":"gps",
     "description": "The GPS component allows a SkyTek device to localize itself in space.",
+    "module_dependencies":[],
+    "libraries":[
+
+    ],
     "data":[
         {"name":"lat", "type":"float"},
         {"name":"lon", "type":"float"},
@@ -31,6 +35,11 @@
         "/gps_fix":{
             "type":"PUB-SUB",
             "fields":["fix"]
+        },
+        "/gps":{
+            "type":"PUB-SUB",
+            "fields":["lat", "lon"],
+            "rate": 1000 //Milliseconds
         }
     }
 }
