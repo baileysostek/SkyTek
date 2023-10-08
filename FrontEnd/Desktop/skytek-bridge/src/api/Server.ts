@@ -6,6 +6,7 @@ import { mainWindow } from "../index";
 import { v4 as uuidv4 } from 'uuid';
 import { SkyTekDevice } from "../types";
 import { ipcMain } from "electron";
+import { log } from "./logging/Logger";
 
 // Define any constants here
 const COMMAND_START_CHARACTER = '/';
@@ -179,8 +180,6 @@ export function discover():  Promise<Array<SkyTekDevice>> {
   });
 }
 
-// Here we define an enum of all of the message types
-
 /**
  * This function allows someone to write to the standard in (stdin) of a Serial port and listen for the response.
  */
@@ -323,7 +322,7 @@ function addDevice(portPath : string, device : ControlledSkyTekDevice){
   // Send an IPC message to remove this device.
   mainWindow.webContents.send("/addDevice", device.device);
 
-  console.log("Added Device", device.device);
+  log("Added Device"+device.device);
 }
 
 function removeDevice(skyTekDevice : SkyTekDevice){
