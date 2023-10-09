@@ -5,8 +5,9 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
-import {discover, query} from "./api/Server";
+import {discover, query, synchronizeClientServerDevices} from "./api/Server";
 import { SkyTekDevice } from './types';
+import { refreshDevices } from './api/Client';
 
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -96,4 +97,15 @@ ipcMain.handle('/devices', async (event: any, someArgument: any) => {
 ipcMain.handle('/query', async (event: any, args : [SkyTekDevice, string, ...any]) => {
   const result = await query(...args); // Get all devices.
   return result;
+})
+
+/**
+ * Sometimes our client gets out of sync with the server.
+ * When this IPC handler is invoked, the list of client-visible devices is passed.
+ * We compare these devices to our server-side devices and then invoke the correct connection and disconnection messages to synchronize the server and client.
+ */
+ipcMain.handle('/refreshDevices', async (event: any, devices : Array<SkyTekDevice>) => {
+  console.log("Client Available:", devices);
+  const result = await synchronizeClientServerDevices(devices);
+  return true;
 })

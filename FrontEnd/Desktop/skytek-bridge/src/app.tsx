@@ -13,6 +13,7 @@ import {
 import AvailableDevices from './routes/AvailableDevices';
 import NavBar from './components/NavBar';
 import DeviceDashboard from './routes/DeviceDashboard';
+import SideBar from './components/SideBar';
 
 // Indicate that the app has loaded
 const { ipcRenderer } = window.require('electron');
@@ -39,10 +40,11 @@ setRouter(router);
 ReactDOM.render(
   <div style={{width:'100vw'}}>
     {/* Navbar and Sidebar */}
-    <NavBar></NavBar>
+    {/* <NavBar></NavBar> */}
+    <SideBar></SideBar>
     {/* Content */}
     <div className='AppContent'>
-      <div style={{marginTop:'64px', width:'100vw', height:'calc(100vh - 64px)', backgroundColor:'char'}}>
+      <div style={{marginLeft:'64px', width:'calc(100vw - 64px)', height:'100vh'}}>
         <React.StrictMode>
           <RouterProvider router={router} />  
         </React.StrictMode>

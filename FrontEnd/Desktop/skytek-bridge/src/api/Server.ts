@@ -246,6 +246,48 @@ export function discover():  Promise<Array<SkyTekDevice>> {
 }
 
 /**
+ * Broadcast all of the available devices.
+ */
+export function synchronizeClientServerDevices(clientDevices : Array<SkyTekDevice>){
+  // Create lists of toAdd and toRemove
+  let toAdd : Array<SkyTekDevice> = new Array<SkyTekDevice>();
+  let toRemove : Array<SkyTekDevice> = new Array<SkyTekDevice>();
+
+  // Create a map of client devices
+  let clientDeviceMap = new Map<string, SkyTekDevice>();
+
+  // First find the set of devices to disconnect. This is anything present in the Client that the server does not have.
+  for(let clientDevice of clientDevices){
+    // Add this value to the map for later
+    clientDeviceMap.set(clientDevice.uuid, clientDevice);
+
+    // Check if the server has this device.
+    if(devices.has(clientDevice.port)){ // We key on the port.
+      // Make sure its the same device
+      let serverDevice = devices.get(clientDevice.port);
+      if(!(serverDevice.device.uuid == clientDevice.uuid)){
+        // This device needs to be removed because the client has the wrong device on this port.
+        toRemove.push(clientDevice);
+      }
+    }
+  }
+
+  // Now we look for any devices to add, these are any devies that the server has that the client does not.
+  for(let serverDevice of devices.values()){
+    let serverUUID = serverDevice.device.uuid;
+    if(!clientDeviceMap.has(serverUUID)){ // Check if the client has this device or not.
+      // If the client does not know about this device, add it to the to add. 
+      toAdd.push(serverDevice.device);
+    }
+  }
+
+  // Add the new devices.
+  for(let device of toAdd){
+    broadcastDeviceAvailable(device);
+  }
+}
+
+/**
  * This function allows someone to write to the standard in (stdin) of a Serial port and listen for the response.
  */
 export function query(skyTekDevice : SkyTekDevice, command : string, args : any = []): Promise<JSON> {

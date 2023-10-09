@@ -14,6 +14,9 @@
 #define SKYTEK_API_VERSION "1.0"
 #define VERSION "0.1" // Board Software Version
 
+// Define a list of capabilities
+#define SKYTEK_CAPABILTIES "[\"gps\", \"lora_send\", \"rgb_led\"]"
+
 // Define our Serial speeds.
 #define HOST_SERIAL_SPEED 115200
 #define GPS_SERIAL_SPEED 9600
@@ -259,6 +262,9 @@ void process_serial_command(){
   if (strcmp(command_buffer, "skytek") == 0) {
     // List software Version
     Serial.printf("{\"id\":\"%s\",\"uuid\":\"%s\",\"version\":\"%s\"}\n", query_uuid_buffer, device_uuid, SKYTEK_API_VERSION);
+  }  else if (strcmp(command_buffer, "capabilities") == 0) {
+    // Query response listing all of our capabilities.
+    Serial.printf("{\"id\":\"%s\",\"uuid\":\"%s\",\"capabilities\":%s}\n", query_uuid_buffer, device_uuid, SKYTEK_CAPABILTIES); // Substitute our capabilities in as a literal array.
   } else {
     Serial.printf("Error: Command '%s' was not recognised.\n", command_buffer);
   }

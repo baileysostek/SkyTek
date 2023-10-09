@@ -72,6 +72,19 @@ ipcRenderer.on("/removeDevice", (_event, device : SkyTekDevice) => {
   }
 });
 
+export function refreshDevices(){
+  return timeout(new Promise((resolve, reject) => {
+    // Here is where we send the event.
+    let devices = [...useDeviceStore.getState().devices];
+    ipcRenderer.invoke("/refreshDevices", devices).then((result : any) => {
+      resolve(result);
+    }).catch((error) => {
+      console.log("Error", error)
+      reject(error)
+    })
+  }), QUERY_TIMEOUT);
+}
+
 // Here we are going to register a function that allows for a user to select a specific device to be their controlled device. 
 export function selectDevice(device : SkyTekDevice){
   useDeviceStore.getState().selectDevice(device);

@@ -1,5 +1,5 @@
 // Import React
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 // Material UI
 import Button from '@mui/material/Button';
@@ -19,7 +19,7 @@ import { useStore } from 'zustand'
 import { useDeviceStore } from '../api/store/DeviceStore';
 
 // API
-import {navigate, selectDevice} from '../api/Client';
+import {getDevices, navigate, refreshDevices, selectDevice} from '../api/Client';
 import DeviceStatus from './DeviceStatus';
 
 // Types
@@ -31,6 +31,11 @@ interface Props {
 const DeviceList = ({} : Props) => {
   // Here is the Zustand store of our devices.
   const deviceStore = useStore(useDeviceStore);
+
+  // Here we issue a command to sync the client and server devices.
+  useEffect(() => {
+    refreshDevices()
+  }, []);
 
   // This function will populate the list with the passed template element
   function listDevices() {
