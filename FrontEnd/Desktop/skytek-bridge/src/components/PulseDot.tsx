@@ -7,7 +7,8 @@ interface Props {
   device: SkyTekDevice;
 }
 
-const WATCHDOG_TIMER = 1250;
+const HEARTBEAT_RATE = 1000;
+const WATCHDOG_TIMER = HEARTBEAT_RATE * 2;
 
 const PulseDot = ({ children, device }: Props) => {
 
@@ -60,7 +61,7 @@ const PulseDot = ({ children, device }: Props) => {
   }, [shouldPulse]);
 
   return (
-    <div style={{width:48, height:48, borderRadius:'50%', backgroundColor: ((unresponsive) ? "#FF9900" : (shouldPulse ? '#AAFFAA' : '#116622'))}}>
+    <div style={{width:48, height:48, borderRadius:'50%', transition:'background-color 0.15s ease-out', backgroundColor: ((unresponsive) ? "#FF9900" : (shouldPulse ? '#AAFFAA' : '#116622'))}}>
       {children}
     </div>
   );

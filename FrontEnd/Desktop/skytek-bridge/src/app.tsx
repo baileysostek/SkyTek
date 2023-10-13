@@ -14,6 +14,7 @@ import AvailableDevices from './routes/AvailableDevices';
 import NavBar from './components/NavBar';
 import DeviceDashboard from './routes/DeviceDashboard';
 import SideBar from './components/SideBar';
+import { useDeviceStore } from './api/store/DeviceStore';
 
 // Indicate that the app has loaded
 const { ipcRenderer } = window.require('electron');
@@ -22,6 +23,10 @@ ipcRenderer.invoke("/onLoad").then((result : any) => {
 }).catch((error) => {
   console.log("Error", error);
 })
+
+const hasDevice = () => {
+  return !!useDeviceStore.getState().selected;
+}
 
 // Define our router
 const router = createHashRouter([
@@ -44,7 +49,7 @@ ReactDOM.render(
     <SideBar></SideBar>
     {/* Content */}
     <div className='AppContent'>
-      <div style={{marginLeft:'64px', width:'calc(100vw - 64px)', height:'100vh'}}>
+      <div style={{width:'100vw', height:'100vh'}}>
         <React.StrictMode>
           <RouterProvider router={router} />  
         </React.StrictMode>
