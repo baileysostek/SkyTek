@@ -30,7 +30,7 @@ const router = createHashRouter([
     element: <AvailableDevices/>
   },
   {
-    path: "/device",
+    path: "/device/*",
     element: <DeviceDashboard/>
   },
 ]);

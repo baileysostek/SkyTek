@@ -209,6 +209,12 @@ export function setRouter(theRouter : any){
 export function navigate(path : string) : void {
   router.navigate(path);
 }
+export function getRoute() : string {
+  let route = router.state.location.pathname;
+  console.log("route:", route)
+  return route;
+}
+
 
 
 /**

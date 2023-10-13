@@ -35,7 +35,7 @@ import { useDeviceStore } from '../api/store/DeviceStore';
 
 
 // API
-import { navigate, query, subscribe } from '../api/Client';
+import { getRoute, navigate, query, subscribe } from '../api/Client';
 import PulseDot from './PulseDot';
 
 // Types
@@ -96,7 +96,10 @@ const SideBar = ({}: Props) => {
         {/* List all of the features present on every SkyTek device. */}
         {/* Settings */}
         <ListItem disablePadding>
-          <ListItemButton>
+          <ListItemButton onClick={() => {
+            navigate("/device/test");
+            getRoute();
+          }}>
             <ListItemIcon style={{minWidth:'0px', paddingLeft:'4px'}}>
               <SettingsIcon></SettingsIcon>
             </ListItemIcon>
