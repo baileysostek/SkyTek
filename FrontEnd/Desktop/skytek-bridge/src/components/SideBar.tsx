@@ -72,9 +72,11 @@ const SideBar = ({}: Props) => {
     <Drawer
         sx={{
           width: drawerWidth,
+          minWidth: drawerWidth,
           flexShrink: 0,
           '& .MuiDrawer-paper': {
             width: drawerWidth,
+            minWidth: drawerWidth,
             boxSizing: 'border-box',
           },
         }}
@@ -82,34 +84,40 @@ const SideBar = ({}: Props) => {
         anchor="left"
         open={hasDevice()}
       >
+        {/* Render the PulseDot for to visualize heartbeat of this device */}
         <DrawerHeader>
           {deviceStore.selected ? <PulseDot device={deviceStore.selected}>
-            <IconButton onClick={() => {
-              // ToDo: do something on click? Maybe onHover we report round trip time or last communication time?
-            }}>
+            <IconButton 
+              style={{width:'100%', height:'100%'}}
+              onClick={() => {
+                // ToDo: do something on click? Maybe onHover we report round trip time or last communication time?
+              }}
+            >
               {/* The Heartbeat Dot */}
               <ChevronLeftIcon/>
             </IconButton>
           </PulseDot> : null}
         </DrawerHeader>
         <Divider />
+
         {/* List all of the features present on every SkyTek device. */}
         {/* Settings */}
         <ListItem disablePadding>
-          <ListItemButton>
+          <ListItemButton style={{height:drawerWidth+'px', minHeight:drawerWidth+'px'}}>
             <ListItemIcon style={{minWidth:'0px', paddingLeft:'4px'}}>
               <SettingsIcon></SettingsIcon>
             </ListItemIcon>
             {/* <ListItemText primary={text} /> */}
           </ListItemButton>
         </ListItem>
+
         {/* List all of the capabilities of this device specifically. */}
         {/* Map requests its own tab */}
         <Divider />
         <List>
           {['Inbox', 'Starred', 'Send email', 'Drafts'].map((text, index) => (
             <ListItem key={text} disablePadding>
-              <ListItemButton>
+              <ListItemButton style={{height:drawerWidth+'px', minHeight:drawerWidth+'px'}}>
                 <ListItemIcon style={{minWidth:'0px', paddingLeft:'4px'}}>
                   {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
                 </ListItemIcon>
@@ -121,10 +129,14 @@ const SideBar = ({}: Props) => {
         {/* Flex downwards to create a space between the back button and settings */}
         <Box sx={{ flexGrow: 1 }}></Box> {/* Take up the remaining space */}
         {/* Render the Back button at the bottom of the drawer. */}
+        <Divider />
         <ListItem disablePadding>
-            <ListItemButton onClick={() => {
-              disconnect();
-            }}>
+            <ListItemButton 
+              style={{height:drawerWidth+'px', minHeight:drawerWidth+'px'}}
+              onClick={() => {
+                disconnect();
+              }}
+            >
               <ListItemIcon style={{minWidth:'0px', paddingLeft:'4px'}}>
                 <ChevronLeftIcon></ChevronLeftIcon>
               </ListItemIcon>
