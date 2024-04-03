@@ -39,6 +39,10 @@ const router = createHashRouter([
     path: "/device",
     element: <DeviceDashboard/>
   },
+  {
+    path: "/console",
+    element: <DebugConsole/>
+  },
 ]);
 setRouter(router);
 

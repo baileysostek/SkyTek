@@ -20,6 +20,7 @@ import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import TerminalIcon from '@mui/icons-material/Terminal';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ListItem from '@mui/material/ListItem';
@@ -37,6 +38,7 @@ import { useDeviceStore } from '../api/store/DeviceStore';
 // API
 import { navigate, query, subscribe } from '../api/Client';
 import PulseDot from './PulseDot';
+import { Tooltip } from '@mui/material';
 
 // Types
 interface Props {
@@ -67,6 +69,18 @@ const SideBar = ({}: Props) => {
     ...theme.mixins.toolbar,
     justifyContent: 'flex-end',
   }));
+
+  const getSelectedDeviceCapabilities = () => {
+    // If we have a selected device
+    if (hasDevice()) {
+      // Get that device
+      let selectedDevice = deviceStore.selected;
+      // Return the capabilities of that device
+      return selectedDevice.capabilities;
+    }
+    // Otherwise return an empty array.
+    return [];
+  }
 
   return (
     <Drawer
@@ -115,19 +129,36 @@ const SideBar = ({}: Props) => {
         {/* Map requests its own tab */}
         <Divider />
         <List>
-          {['Inbox', 'Starred', 'Send email', 'Drafts'].map((text, index) => (
-            <ListItem key={text} disablePadding>
-              <ListItemButton style={{height:drawerWidth+'px', minHeight:drawerWidth+'px'}}>
-                <ListItemIcon style={{minWidth:'0px', paddingLeft:'4px'}}>
-                  {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-                </ListItemIcon>
-                {/* <ListItemText primary={text} /> */}
-              </ListItemButton>
+          {getSelectedDeviceCapabilities().map((capability : string, index) => (
+            <ListItem key={capability} disablePadding>
+              <Tooltip title={capability} placement='right'>
+                <ListItemButton style={{height:drawerWidth+'px', minHeight:drawerWidth+'px'}}>
+                  <ListItemIcon style={{minWidth:'0px', paddingLeft:'4px'}}>
+                    {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                  </ListItemIcon>
+                  {/* <ListItemText primary={text} /> */}
+                </ListItemButton>
+              </Tooltip>
             </ListItem>
           ))}
         </List>
         {/* Flex downwards to create a space between the back button and settings */}
         <Box sx={{ flexGrow: 1 }}></Box> {/* Take up the remaining space */}
+        {/* Render the Console button at the bottom of the drawer. */}
+        <Divider />
+        <ListItem disablePadding>
+            <ListItemButton 
+              style={{height:drawerWidth+'px', minHeight:drawerWidth+'px'}}
+              onClick={() => {
+                // When a user clicks on the Terminal button, Open a terminal to connect to the device.
+                navigate("/console");
+              }}
+            >
+              <ListItemIcon style={{minWidth:'0px', paddingLeft:'4px'}}>
+                <TerminalIcon></TerminalIcon>
+              </ListItemIcon>
+            </ListItemButton>
+          </ListItem>
         {/* Render the Back button at the bottom of the drawer. */}
         <Divider />
         <ListItem disablePadding>
