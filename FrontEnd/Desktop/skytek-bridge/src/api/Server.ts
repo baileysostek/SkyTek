@@ -404,6 +404,7 @@ function resolveCallbacks(device : SkyTekDevice | null, jsonData : string){
   // If we got here we had an error parsing the message we got back from the SkyTek device.
 }
 
+// TODO: Clean this up
 function publishMessageOnTopic(topic : string, message: JSON, messageOrigin : string, overrideSender : boolean){
   // Emit the specific message
   if(!overrideSender){
@@ -422,6 +423,13 @@ function publishMessageOnTopic(topic : string, message: JSON, messageOrigin : st
   message.uuid = messageOrigin; // Add the uuid of the device which this message originated from.
   // Send this message globally.
   mainWindow.webContents.send(topic, message);
+
+  // Log info
+  console.log(devices, messageOrigin);
+  if(devices.has(messageOrigin)){
+    // Log the info
+    devices.get(messageOrigin).log("Data:");
+  }
 }
 
 function broadcastDeviceAvailable(device : SkyTekDevice){

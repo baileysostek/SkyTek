@@ -14,6 +14,7 @@ import NavBar from './components/NavBar';
 import DeviceDashboard from './routes/DeviceDashboard';
 import SideBar from './components/SideBar';
 import { useDeviceStore } from './api/store/DeviceStore';
+import DebugConsole from './routes/DebugConsole';
 
 // Routes
 import AvailableDevices from './routes/AvailableDevices';
@@ -46,6 +47,10 @@ const router = createHashRouter([
   {
     path: "/device/*",
     element: <DeviceDashboard/>
+  },
+  {
+    path: "/console",
+    element: <DebugConsole/>
   },
 ]);
 setRouter(router);
