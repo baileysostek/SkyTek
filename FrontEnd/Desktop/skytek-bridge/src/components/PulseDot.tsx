@@ -61,7 +61,7 @@ const PulseDot = ({ children, device }: Props) => {
   }, [shouldPulse]);
 
   return (
-    <div style={{width:48, height:48, borderRadius:'50%', transition:'background-color 0.15s ease-out', backgroundColor: ((unresponsive) ? "#FF9900" : (shouldPulse ? '#AAFFAA' : '#116622'))}}>
+    <div style={{width:48, height:48, outline:'solid #FFFFFF 2px', borderRadius:'50%', transition:'background-color 0.15s ease-out', backgroundColor: ((unresponsive) ? "#FF9900" : (shouldPulse ? '#AAFFAA' : '#116622'))}}>
       {children}
     </div>
   );

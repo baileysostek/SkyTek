@@ -11,8 +11,8 @@
         {"name":"lon", "type":"float"},
         {"name":"accuracy", "type":"float"},
         {"name":"altitude", "type":"float"},
-        {"name":"satellites", "type":"int"},
-        {"name":"time", "type":"string", "length":5},
+        {"name":"sattelites", "type":"int"},
+        {"name":"time", "type":"string", "length":10},
         {"name":"date", "type":"string", "length":10},
         {"name":"fix", "type":"boolean"}
     ],
@@ -28,9 +28,9 @@
             "type":"QUERY",
             "fields":["date", "time"]
         },
-        "/satellites":{
+        "/sattelites":{
             "type":"QUERY",
-            "fields":["satellites"]
+            "fields":["sattelites"]
         },
         "/gps_fix":{
             "type":"PUB-SUB",

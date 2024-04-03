@@ -11,8 +11,8 @@ import ListItemAvatar from '@mui/material/ListItemAvatar';
 import ListItemText from '@mui/material/ListItemText';
 import Avatar from '@mui/material/Avatar';
 import Grid from '@mui/material/Grid';
-import Typography from '@mui/material/Typography';
 import RocketIcon from '@mui/icons-material/RocketLaunchOutlined';
+import Typography from '@mui/material/Typography';
 
 // Import our store
 import { useStore } from 'zustand'
@@ -40,7 +40,9 @@ const DeviceList = ({} : Props) => {
   // This function will populate the list with the passed template element
   function listDevices() {
     if(!(deviceStore?.devices) || (deviceStore?.devices?.length <= 0)){
-      return <div>No Available Devices</div>
+      return <Typography sx={{ mt: 2}} style={{paddingLeft:'16px'}} variant="h6" component="div">
+        No Available Devices
+      </Typography>
     }
     return deviceStore?.devices?.map((device, index) =>
       <div key={index} onClick={() => {
@@ -57,12 +59,9 @@ const DeviceList = ({} : Props) => {
       <Box sx={{ flexGrow: 1}}>
         <Grid container spacing={2}>
           <Grid item xs={12} style={{padding:'0px'}} >
-            <Typography sx={{ mt: 4, mb: 2 }} variant="h6" component="div">
-              Available Devices
-            </Typography>
-              <List dense={false}>
-                {listDevices()}
-              </List>
+            <List dense={false}>
+              {listDevices()}
+            </List>
           </Grid>
         </Grid>
       </Box>

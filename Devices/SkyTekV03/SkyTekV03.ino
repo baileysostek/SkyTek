@@ -15,7 +15,7 @@
 #define VERSION "0.3" // Board Software Version
 
 // Define a list of capabilities
-#define SKYTEK_CAPABILTIES "[\"gps\", \"lora_send\", \"rgb_led\"]"
+#define SKYTEK_CAPABILTIES "[\"gps\"]"
 
 // Define our Serial speeds.
 #define HOST_SERIAL_SPEED 115200

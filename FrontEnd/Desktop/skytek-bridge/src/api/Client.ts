@@ -13,6 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useDeviceStore } from './store/DeviceStore';
 import { IpcRendererEvent } from 'electron';
 import { Router } from 'react-router-dom';
+import { DEVICE_CAPABILITIES, ADD_DEVICE, REMOVE_DEVICE } from './Topics';
 
 // These are the functions that connect to the API, they store data in the zustand store
 // Import IPC Renderer to allow the frontend to talk to the backend.
@@ -33,13 +34,13 @@ export function getDevices() : Promise<Array<SkyTekDevice>>{
   });
 }
 // Subscribe to an IPC Channel for listening for device connections.
-ipcRenderer.on("/addDevice", (_event, device : SkyTekDevice) => {
+ipcRenderer.on(ADD_DEVICE, (_event, device : SkyTekDevice) => {
   let devices = [...useDeviceStore.getState().devices];
   devices.push(device);
   useDeviceStore.getState().setDevices(devices);
 });
 // Subscribe to an IPC Channel for listening for device disconnects.
-ipcRenderer.on("/removeDevice", (_event, device : SkyTekDevice) => {
+ipcRenderer.on(REMOVE_DEVICE, (_event, device : SkyTekDevice) => {
   let devices = [...useDeviceStore.getState().devices];
   console.log("Removing", device, devices);
   let deviceIndex = devices.map((skyTekDevice) => (skyTekDevice.port)).indexOf(device.port);
@@ -220,6 +221,6 @@ export function getRoute() : string {
 /**
  *  
  */
-ipcRenderer.on("/getRegisteredCapabilities", (_event, capabilityHandlers : Array<string>) => {
+ipcRenderer.on(DEVICE_CAPABILITIES, (_event, capabilityHandlers : Array<string>) => {
   useDeviceStore.getState().setCapabilities(capabilityHandlers);
 });

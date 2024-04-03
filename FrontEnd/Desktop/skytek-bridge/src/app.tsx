@@ -10,11 +10,16 @@ import {
   RouterProvider,
 } from "react-router-dom";
 
-import AvailableDevices from './routes/AvailableDevices';
 import NavBar from './components/NavBar';
 import DeviceDashboard from './routes/DeviceDashboard';
 import SideBar from './components/SideBar';
 import { useDeviceStore } from './api/store/DeviceStore';
+
+// Routes
+import AvailableDevices from './routes/AvailableDevices';
+import DeviceSettings from './routes/DeviceSettings';
+import SideBarOffset from './components/SideBarOffset';
+import MyRockets from './routes/rockets/MyRockets';
 
 // Indicate that the app has loaded
 const { ipcRenderer } = window.require('electron');
@@ -32,7 +37,11 @@ const hasDevice = () => {
 const router = createHashRouter([
   {
     path: "/",
-    element: <AvailableDevices/>
+    element: <MyRockets/>
+  },
+  {
+    path: "/device/settings",
+    element: <DeviceSettings/>
   },
   {
     path: "/device/*",
@@ -46,12 +55,14 @@ ReactDOM.render(
   <div style={{width:'100vw'}}>
     {/* Navbar and Sidebar */}
     {/* <NavBar></NavBar> */}
-    <SideBar></SideBar>
+    <SideBar/>
     {/* Content */}
     <div className='AppContent'>
       <div style={{width:'100vw', height:'100vh'}}>
         <React.StrictMode>
-          <RouterProvider router={router} />  
+          <SideBarOffset>
+            <RouterProvider router={router} />  
+          </SideBarOffset>
         </React.StrictMode>
       </div>
     </div>

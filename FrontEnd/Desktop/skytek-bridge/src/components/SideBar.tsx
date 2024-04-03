@@ -14,10 +14,13 @@ import Drawer from '@mui/material/Drawer';
 import CssBaseline from '@mui/material/CssBaseline';
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
+import Tooltip from '@mui/material/Tooltip';
 import List from '@mui/material/List';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
+
+import HomeIcon from '@mui/icons-material/Home';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -43,12 +46,13 @@ interface Props {
 
 }
 
+// TODO: get from ENV file.
+const SIDEBAR_WIDTH = 64;
+
 const SideBar = ({}: Props) => {
 
   // Here is the Zustand store of our devices.
   const deviceStore = useStore(useDeviceStore);
-
-  const drawerWidth = 64;
 
   const disconnect = () => {
     navigate("/");
@@ -68,16 +72,24 @@ const SideBar = ({}: Props) => {
     justifyContent: 'flex-end',
   }));
 
+  const getDeviceCapabilities = () => {
+    if(hasDevice()){
+      return deviceStore.selected.capabilities
+    }
+    return ['Test']
+  }
+
   return (
     <Drawer
         sx={{
-          width: drawerWidth,
-          minWidth: drawerWidth,
+          width: SIDEBAR_WIDTH,
+          minWidth: SIDEBAR_WIDTH,
           flexShrink: 0,
           '& .MuiDrawer-paper': {
-            width: drawerWidth,
-            minWidth: drawerWidth,
+            width: SIDEBAR_WIDTH,
+            minWidth: SIDEBAR_WIDTH,
             boxSizing: 'border-box',
+            backgroundColor:"darkslategrey"
           },
         }}
         variant="persistent"
@@ -87,45 +99,55 @@ const SideBar = ({}: Props) => {
         {/* Render the PulseDot for to visualize heartbeat of this device */}
         <DrawerHeader>
           {deviceStore.selected ? <PulseDot device={deviceStore.selected}>
-            <IconButton 
-              style={{width:'100%', height:'100%'}}
-              onClick={() => {
-                // ToDo: do something on click? Maybe onHover we report round trip time or last communication time?
-              }}
-            >
-              {/* The Heartbeat Dot */}
-              <ChevronLeftIcon/>
-            </IconButton>
+            <Tooltip title={"Monitor Device"} placement='left'>
+              <IconButton 
+                style={{width:'100%', height:'100%'}}
+                onClick={() => {
+                  navigate("/device/");
+                }}
+              >
+                {/* The Heartbeat Dot */}
+                <HomeIcon/>
+              </IconButton>
+            </Tooltip>
           </PulseDot> : null}
         </DrawerHeader>
         <Divider />
 
         {/* List all of the features present on every SkyTek device. */}
+        {/* Currently this is just device settings. */}
         {/* Settings */}
         <ListItem disablePadding>
-          <ListItemButton onClick={() => {
-            navigate("/device/test");
-            getRoute();
-          }}>
-            <ListItemIcon style={{minWidth:'0px', paddingLeft:'4px'}}>
-              <SettingsIcon></SettingsIcon>
-            </ListItemIcon>
-            {/* <ListItemText primary={text} /> */}
-          </ListItemButton>
+          <Tooltip title={"Device Settings"} placement='left'>
+            <ListItemButton 
+              style={{minHeight:'64px'}}
+              onClick={() => {
+                navigate("/device/settings");
+              }}
+            >
+              <ListItemIcon style={{minWidth:'0px', paddingLeft:'4px'}}>
+                <SettingsIcon></SettingsIcon>
+              </ListItemIcon>
+              {/* <ListItemText primary={text} /> */}
+            </ListItemButton>
+          </Tooltip>
         </ListItem>
 
         {/* List all of the capabilities of this device specifically. */}
+        {/* During the handsake with a device, the device will send all of its capabilities. */}
         {/* Map requests its own tab */}
         <Divider />
-        <List>
-          {['Inbox', 'Starred', 'Send email', 'Drafts'].map((text, index) => (
+        <List style={{padding:'0px'}}>
+          {getDeviceCapabilities().map((text, index) => (
             <ListItem key={text} disablePadding>
-              <ListItemButton style={{height:drawerWidth+'px', minHeight:drawerWidth+'px'}}>
-                <ListItemIcon style={{minWidth:'0px', paddingLeft:'4px'}}>
-                  {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-                </ListItemIcon>
-                {/* <ListItemText primary={text} /> */}
-              </ListItemButton>
+              <Tooltip title={text} placement='left'>
+                <ListItemButton style={{height:SIDEBAR_WIDTH+'px', minHeight:SIDEBAR_WIDTH+'px'}}>
+                  <ListItemIcon style={{minWidth:'0px', paddingLeft:'4px'}}>
+                    {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                  </ListItemIcon>
+                  {/* <ListItemText primary={text} /> */}
+                </ListItemButton>
+              </Tooltip>
             </ListItem>
           ))}
         </List>
@@ -134,8 +156,9 @@ const SideBar = ({}: Props) => {
         {/* Render the Back button at the bottom of the drawer. */}
         <Divider />
         <ListItem disablePadding>
+          <Tooltip title={"Back"} placement='left'>
             <ListItemButton 
-              style={{height:drawerWidth+'px', minHeight:drawerWidth+'px'}}
+              style={{height:SIDEBAR_WIDTH+'px', minHeight:SIDEBAR_WIDTH+'px'}}
               onClick={() => {
                 disconnect();
               }}
@@ -144,7 +167,8 @@ const SideBar = ({}: Props) => {
                 <ChevronLeftIcon></ChevronLeftIcon>
               </ListItemIcon>
             </ListItemButton>
-          </ListItem>
+          </Tooltip>
+        </ListItem>
       </Drawer>
   );
 };

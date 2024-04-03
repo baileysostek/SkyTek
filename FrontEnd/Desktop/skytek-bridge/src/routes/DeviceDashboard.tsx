@@ -43,7 +43,8 @@ const DeviceDashboard = ({}: Props) => {
 
     let newCapabilities = new Map<string, ReactJSXElement>();
     for(let capabilityName of allCapabilities){
-      newCapabilities.set(capabilityName, (require("../components/capabilities/SkyTek_"+capabilityName+".tsx").default));
+      let externalCapability = (require("../components/capabilities/SkyTek_"+capabilityName+".tsx").default);
+      newCapabilities.set(capabilityName, externalCapability);
     }
 
     setCapabilities(newCapabilities);
@@ -70,7 +71,7 @@ const DeviceDashboard = ({}: Props) => {
   }
 
   return (
-    <Grid container spacing={2} style={{margin:'0px', marginLeft:hasDevice() ? '64px' : '0px', width:hasDevice() ? 'calc(100% - 64px)' : '100%', height:'100%', textAlign:'center'}}>
+    <Grid container spacing={2} style={{margin:'0px',  width:'100%', height:'100%', textAlign:'center'}}>
       {!hasDevice() ? <></> : deviceStore.selected.capabilities.filter(hasCapability).map((item : string , index : number) => (
         <Grid item xs={12} key={index} style={{padding:'0px'}}>
           {mapCapabilityToElement(item)}
