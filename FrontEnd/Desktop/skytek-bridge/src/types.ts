@@ -7,14 +7,32 @@ export class SkyTekDevice {
   port : string;
   capabilities : Array<string> = new Array<string>(); 
 
+  // Log all of the messages that traveled through this device
+  logs : Array<string>;
+
   // Things the device can do
-  constructor(uuid: string, port : string){
+  constructor(uuid: string, port : string, logSize : number = 2048){
     this.uuid = uuid;
     this.port = port;
+    // Define our logs
+    this.logs = new Array<string>(logSize);
   }
 
   addCapability(capability : string){
     this.capabilities.push(capability);
+  }
+
+  /**
+   * 
+   * @param message String - The message that originated from this device.
+   */
+  log (...messageParts : Array<Object>) {
+    // Construct the message from the parts of the message.
+    let message = messageParts.join();
+    // Add this message to this device's logs.
+    this.logs.push(message);
+    // Log the message
+    console.log("Test:", message);
   }
 }
 

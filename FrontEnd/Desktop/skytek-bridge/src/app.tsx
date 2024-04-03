@@ -15,6 +15,7 @@ import NavBar from './components/NavBar';
 import DeviceDashboard from './routes/DeviceDashboard';
 import SideBar from './components/SideBar';
 import { useDeviceStore } from './api/store/DeviceStore';
+import DebugConsole from './routes/DebugConsole';
 
 // Indicate that the app has loaded
 const { ipcRenderer } = window.require('electron');
