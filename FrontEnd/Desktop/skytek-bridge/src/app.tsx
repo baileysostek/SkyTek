@@ -37,7 +37,7 @@ const hasDevice = () => {
 const router = createHashRouter([
   {
     path: "/",
-    element: <MyRockets/>
+    element: <AvailableDevices/>
   },
   {
     path: "/device/settings",
