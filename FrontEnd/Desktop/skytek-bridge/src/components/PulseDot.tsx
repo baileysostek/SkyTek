@@ -22,10 +22,14 @@ const PulseDot = ({ children, device }: Props) => {
   useEffect(() => {
     refresh();
 
-    console.log("Device", device);
-
+    // Subscribe to the supplied devices "heartbeat" message
     let subscriber = subscribe(device, "heartbeat", (data) => {
+      // Notify this component that we should pulse.
       setShouldPulse(true);
+
+      console.log("Heartbeat data", data);
+
+      // Add a timeout to indicate that pulse should stop 100ms later.
       setTimeout(() => {
         setShouldPulse(false);
       }, 100);

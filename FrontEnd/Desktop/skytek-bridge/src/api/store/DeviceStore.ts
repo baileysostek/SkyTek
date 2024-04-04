@@ -21,7 +21,14 @@ export const useDeviceStore = createStore<DeviceStore>((set) => ({
   setDevices: (devices : Array<SkyTekDevice>) => set({devices : devices}),
 
   selected : null,
-  selectDevice: (device : SkyTekDevice) => set({selected : device}),
+  selectDevice: (device : SkyTekDevice) => {
+    // Check if we are selecting null
+    if (device) { // Deselect
+      console.log("Deselecting device.");
+    }
+    // Set the selected device
+    set({selected : device});
+  },
   deselectDevice: () => set({selected : null}),
 
   capabilities: [],

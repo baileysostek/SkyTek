@@ -75,7 +75,7 @@ function init(){
 }
 
 export function discover():  Promise<Array<SkyTekDevice>> {
-  // We dont know how long this function will take to return, so we will return a promise that we can then observe the lifecycle of.
+  // We don't know how long this function will take to return, so we will return a promise that we can then observe the lifecycle of.
   return new Promise((resolve, reject) => {
     // Request a list of all serial ports
     SerialPort.list().then((ports) => {
@@ -113,6 +113,7 @@ export function discover():  Promise<Array<SkyTekDevice>> {
 
           // Here we do our SkyTek Handshake to confirm that we are talking with a SkyTek device.
           // Generate a new UUID for this message. 
+          // Each message has a unique ID associated with it so the callback handler can execute the correct callback when we eventually get a response.
           let uuid =  uuidv4().replaceAll("-", "");
 
           // build our message here
@@ -352,7 +353,7 @@ function resolveCallbacks(device : SkyTekDevice | null, jsonData : string){
         // Delete the UUID off of the response data
         delete json.id;
         // Execute the callback.
-        console.log("[QUERY]", (device ? device.port : ""), ":", json);
+        // console.log("[QUERY]", (device ? device.port : ""), ":", json);
         callbacks.get(uuid)(json); // call the callback with the data passed.
         // Remove that Callback
         callbacks.delete(uuid);
@@ -363,12 +364,20 @@ function resolveCallbacks(device : SkyTekDevice | null, jsonData : string){
 
     // If we get here, we had a generic message with no callbacks. This means it could be a broadcast message, so lets emit that message.
     if(json.hasOwnProperty("topic")){
+      // Store the UUID of the device that this message was transmitted through.
+      let messageOrigin = device.uuid;
+
+      // Some devices act as relays for other devices in the network. For example, they may have a communication modality that enables them
+      // to talk to both this server over Serial and an edge device. In the case that we detect a message originated from another device, we need to
+      // override the message author uuid to emulate that the remote device is directly connected to this server.
       let overrideSender = false;
       // If this is a relayed command, it is a PUB-SUB coming from a different device.
       // This means that the device UUID is the remote device's id, not our own.
       if(json.hasOwnProperty("relay")){
-        // We are supposed to relay this data. So replace the topic's id with the remote device id.
-        overrideSender = json.id;
+        // Since we are overriding the sender, set the overrideSender flag to true.
+        overrideSender = true;
+        // We are supposed to relay this data. So replace the messageOrigin uuid with the remote device uuid.
+        messageOrigin = json.id;
         // Now that we know this is a command to be relayed, we can delete the relay properties which we no longer need.
         delete json.id;
         delete json.relay;
@@ -380,9 +389,6 @@ function resolveCallbacks(device : SkyTekDevice | null, jsonData : string){
       // Remove the topic entry from the JSON data
       delete json.topic;
 
-      // Store the UUID of the device that this message originated on.
-      let messageOrigin = device.uuid;
-
       // Send the message
       publishMessageOnTopic(topic, json, messageOrigin, overrideSender);
 
@@ -391,12 +397,14 @@ function resolveCallbacks(device : SkyTekDevice | null, jsonData : string){
     }
 
   }catch(err){
-    // If we get an error say the error.
+    // If we get an error print the error.
     if(err instanceof SyntaxError){
+      // Device-side error
       if(jsonData.startsWith("Error:")){
         console.log((device ? ("["+device.port+"]") : ""), jsonData);
         return;
       }
+      // Error handling the response data.
       console.log("[SYNTAX ERROR]", jsonData);
     }
     return;
@@ -404,31 +412,37 @@ function resolveCallbacks(device : SkyTekDevice | null, jsonData : string){
   // If we got here we had an error parsing the message we got back from the SkyTek device.
 }
 
-// TODO: Clean this up
+/**
+ * This function issues two IPC channel messages notifying the frontend that a backend device has issued a message.
+ * One message is sent on the specific topic issued by the device globally, without device specific information.
+ *    EXAMPLE  [Device:C28BE5FE680E43A1BE510BA46D06E3FD] Issues a "heartbeat" with the data { msg : 1 }
+ *    SERVER intercepts this message and sends [/heartbeat : { msg : 1 }]
+ * This is issued on the global "/heartbeat" channel and is not associated with the sender at all.
+ * ADDITIONALLY a device-specific message is issued.
+ *    EXAMPLE  [Device:C28BE5FE680E43A1BE510BA46D06E3FD] Issues a "heartbeat" with the data { msg : 1 }
+ *    SERVER intercepts this message and sends [/C28BE5FE680E43A1BE510BA46D06E3FD/heartbeat : { msg : 1 }]
+ * This associates the message with the sender.
+ * @param topic 
+ * @param message 
+ * @param messageOrigin 
+ * @param overrideSender 
+ */
 function publishMessageOnTopic(topic : string, message: JSON, messageOrigin : string, overrideSender : boolean){
   // Emit the specific message
-  if(!overrideSender){
-    // This is the specific topic.
-    let specificTopic = "/" + messageOrigin + topic;
-    // Print the topic and message
-    console.log("["+(overrideSender ? "REMOTE-" : "")+"PUB-SUB]", specificTopic, ":", message);
-    // Send this message globally.
-    mainWindow.webContents.send(specificTopic, message);
-  }
-
-  // Print the topic and data that we are about to send.
+  // This is the specific topic.
+  let deviceAndTopic = "/" + messageOrigin + topic;
+  // Send a specific message originating from the device.
+  console.log("["+(overrideSender ? "REMOTE-" : "")+"PUB-SUB]", deviceAndTopic, ":", message);
+  mainWindow.webContents.send(deviceAndTopic, message);
+  // Send this message globally, no device just topic.
   console.log("["+(overrideSender ? "REMOTE-" : "")+"PUB-SUB]", topic, ":", message);
-  // Emit the global message (done in all cases)
-  //@ts-ignore
-  message.uuid = messageOrigin; // Add the uuid of the device which this message originated from.
-  // Send this message globally.
   mainWindow.webContents.send(topic, message);
 
   // Log info
-  console.log(devices, messageOrigin);
+  // console.log(devices, messageOrigin);
   if(devices.has(messageOrigin)){
     // Log the info
-    devices.get(messageOrigin).log("Data:");
+    // devices.get(messageOrigin).device.log("Data:");
   }
 }
 

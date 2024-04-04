@@ -1,11 +1,12 @@
 export class SkyTekDevice {
-  // This is a unique ID which identifys this specific SkyTekDevice
+  // This is a unique ID which identifies this specific SkyTekDevice
   uuid : string;
 
   // These properties are published about the device. 
   name : string;
+  version_number : string;
   port : string;
-  capabilities : Array<string> = new Array<string>(); 
+  capabilities : Array<string> = new Array<string>();
 
   // Log all of the messages that traveled through this device
   logs : Array<string>;

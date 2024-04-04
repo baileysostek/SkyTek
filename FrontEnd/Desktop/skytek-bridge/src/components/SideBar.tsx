@@ -24,6 +24,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import TerminalIcon from '@mui/icons-material/Terminal';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ListItem from '@mui/material/ListItem';
@@ -106,7 +107,7 @@ const SideBar = ({}: Props) => {
         {/* Render the PulseDot for to visualize heartbeat of this device */}
         <DrawerHeader>
           {deviceStore.selected ? <PulseDot device={deviceStore.selected}>
-            <Tooltip title={"Monitor Device"} placement='left'>
+            <Tooltip title={"Last Heartbeat" + 200 + "ms"} placement='left'>
               <IconButton 
                 style={{width:'100%', height:'100%'}}
                 onClick={() => {
@@ -114,7 +115,7 @@ const SideBar = ({}: Props) => {
                 }}
               >
                 {/* The Heartbeat Dot */}
-                <HomeIcon/>
+                <FavoriteBorderIcon/>
               </IconButton>
             </Tooltip>
           </PulseDot> : null}
@@ -163,18 +164,20 @@ const SideBar = ({}: Props) => {
         {/* Render the Console button at the bottom of the drawer. */}
         <Divider />
         <ListItem disablePadding>
+          <Tooltip title={"Console"} placement='left'>
             <ListItemButton 
-              style={{height:drawerWidth+'px', minHeight:drawerWidth+'px'}}
+              style={{height:SIDEBAR_WIDTH+'px', minHeight:SIDEBAR_WIDTH+'px'}}
               onClick={() => {
                 // When a user clicks on the Terminal button, Open a terminal to connect to the device.
                 navigate("/console");
               }}
             >
-              <ListItemIcon style={{minWidth:'0px', paddingLeft:'4px'}}>
-                <TerminalIcon></TerminalIcon>
+              <ListItemIcon style={{minWidth:'0px', paddingLeft:'4px', scale:2}}>
+                <TerminalIcon style={{scale:2}}></TerminalIcon>
               </ListItemIcon>
             </ListItemButton>
-          </ListItem>
+          </Tooltip>
+        </ListItem>
         {/* Render the Back button at the bottom of the drawer. */}
         <Divider />
         <ListItem disablePadding>
