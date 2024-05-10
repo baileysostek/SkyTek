@@ -45,21 +45,27 @@ type SkyTekInitializationResponse = {
   version: number
 }
 
-let interval : NodeJS.Timeout | null = null;
+// Define the rate at which this backend server polls for new SkyTek Devices.
+const DEVICE_DISCOVERY_POLLING_INTERVAL = 1000; // 1000ms = 1 second.
+// Define a variable to hold the NodeJS.Timeout instance pointing to our polling loop.
+let device_polling_interval : NodeJS.Timeout | null = null;
 ipcMain.handle("/onLoad", () => {
   init(); // When the application loads, init the Server.
 });
 
 //TODO:singleton
 function init(){
-  if(interval){
-    clearInterval(interval);
+  // If we already have a polling loop going, clear that interval.
+  if(device_polling_interval){
+    clearInterval(device_polling_interval);
   }
-  interval = setInterval(() => {
+  // Define function that polls for new SkyTek devices at a fixed interval.
+  device_polling_interval = setInterval(() => {
     discover();
-  }, 1000)
+  }, DEVICE_DISCOVERY_POLLING_INTERVAL);
 
-
+  // Determine the capabilities that the system knows about. 
+  // These capabilities can have matching TS libraries which are dynamically loaded in the frontend.
   let capabilitiesContent = fs.readdirSync(CAPABILITIES_DIRECTORY_PATH);
   let capabilities = [];
   for(let file of capabilitiesContent){
@@ -70,7 +76,7 @@ function init(){
   }
 
   console.log("Capability Handlers discovered:", capabilities);
-
+  // Tell the frontend which capabilities this backend recognizes.
   mainWindow.webContents.send("/getRegisteredCapabilities", capabilities);
 }
 

@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from 'react';
 
 interface Props {
 
-  }
+}
 
 const SkyTek_tether = ({}: Props) => {
 

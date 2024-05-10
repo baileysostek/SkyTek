@@ -109,7 +109,7 @@ void setup() {
     device_uuid[i * 2 + 1] = lowerNibble + (lowerNibble < 10 ? '0' : 'A' - 10);
   }
 
-  Serial.printf("Device UUID:%s\n", device_uuid);
+  // Serial.printf("Device UUID:%s\n", device_uuid);
 
   // Init LoRa
   LoRa.setPins(10, 9, 0);

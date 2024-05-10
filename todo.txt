@@ -1,0 +1,4 @@
+- Refactor SkyTek code to do i2C query to find devices
+- Refactor GPS code to take in string from multiple modalities
+- Refactor output code to output over multiple modalities
+- Refactor JSON to be Protobuf
