@@ -57,10 +57,6 @@ const createWindow = (): void => {
       },
     });
   });
-
-  
-
-  // discover();
 };
 
 // This method will be called when Electron has finished

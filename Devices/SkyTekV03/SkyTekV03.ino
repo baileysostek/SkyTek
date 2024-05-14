@@ -15,7 +15,7 @@
 #define VERSION "0.3" // Board Software Version
 
 // Define a list of capabilities
-#define SKYTEK_CAPABILTIES "[\"gps\"]"
+#define SKYTEK_CAPABILTIES "[\"gps\", \"altitude\"]"
 
 // Define our Serial speeds.
 #define HOST_SERIAL_SPEED 115200
@@ -109,6 +109,7 @@ float base_altitude = 0;
 #define BMP_SAMPLES 4
 float bmp_samples[BMP_SAMPLES] = {0};
 int bmp_sample_index = 0;
+float bmp_average_altitude = 0;
 
 float arming_altitude = 100;
 float highest_altitude = 0;
@@ -384,7 +385,7 @@ void loop() {
   // Store initial BMP Values
   
   // Average BMP
-  // printBMPValues();
+  printBMPValues();
 
   // printADXLValues(now);
 
@@ -844,12 +845,13 @@ void printBMPValues(){
   bmp_samples[bmp_sample_index] = bmp.readAltitude(SEALEVELPRESSURE_HPA) - base_altitude;
   bmp_sample_index++;
   bmp_sample_index %= BMP_SAMPLES;
-  float average_altitude = 0;
+  bmp_average_altitude = 0;
   for(int i = 0; i < BMP_SAMPLES; i++){
-    average_altitude += bmp_samples[i];
+    bmp_average_altitude += bmp_samples[i];
   }
-  average_altitude /= BMP_SAMPLES;
-  Serial.println(average_altitude);
+  bmp_average_altitude /= BMP_SAMPLES;
+
+  Serial.printf("{\"topic\":\"/altitude\",\"alt\":%f}\n", bmp_average_altitude);
 }
 
 void calibrateBMP(){

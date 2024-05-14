@@ -11,14 +11,11 @@ import { log } from "./logging/Logger";
 // Import FS
 import * as fs from "fs";
 
-// Import Mustache for substitution.
-import Mustache from 'mustache';
-
+// TODO: Refactor to config file.
 // Define constants for capabilities
 const CAPABILITIES_DIRECTORY_PATH = "./src/components/capabilities/"; // Relative Path to Base
 const CAPABILITY_PREFIX = "SkyTek_"; // Prefix for files.
 const CAPABILITY_EXTENSION = ".tsx";
-
 // Define any constants here
 const COMMAND_START_CHARACTER = '/';
 const COMMAND_END_CHARACTER = '\n';
@@ -49,9 +46,54 @@ type SkyTekInitializationResponse = {
 const DEVICE_DISCOVERY_POLLING_INTERVAL = 1000; // 1000ms = 1 second.
 // Define a variable to hold the NodeJS.Timeout instance pointing to our polling loop.
 let device_polling_interval : NodeJS.Timeout | null = null;
+
+/**
+ * When our Electron window loads, we omit an onLoad message over the onLoad channel, this file intercepts this message and tries to initialize our server.
+ */
 ipcMain.handle("/onLoad", () => {
-  init(); // When the application loads, init the Server.
+  // Initialize our singleton
+  Server.initialize();
 });
+
+// Singleton instance of our server
+class Server {
+  // Hold onto the singleton instance of this server.
+  private static instance: Server = null;
+
+  // Define the constructor for this Server class.
+  private constructor() {
+    init();
+  }
+
+  /**
+   * Here we define the initializer for our Singleton instance. Traditional implementations of the singleton design pattern do not have a separate initialize method,
+   * however I find that this design decision introduces unpredictability into the system. It becomes hard to track which call to getInstance is executed first. 
+   * Because of this, I separate initialize to its own function which is called ONCE in the place where you want to load your singleton instance.
+   * 
+   * A byproduct of this design decision is that you can stack singleton initializer and allow them to rely on one-another and start in predictable ways. 
+   */
+  static initialize() : boolean {
+    // If we have not initialized yet, initialize
+    if (this.instance == null) {
+      // Initialize a new singleton instance. 
+      this.instance = new Server();
+      // We were able to initialize our server, so we return true
+      return true;
+    } else {
+      // The singleton has already initialized, return false because we did not initialize a new instance of the singleton.
+      return false;
+    }
+  }
+
+  /**
+   * Getter for our singleton server instance. 
+   * @returns {Server | null} Returns the instance of the Server singleton or null if this instance is not initialized yet.
+   */
+  static getInstance() : Server {
+    return this.instance;
+  }
+}
+
 
 //TODO:singleton
 function init(){
@@ -440,7 +482,11 @@ function publishMessageOnTopic(topic : string, message: JSON, messageOrigin : st
   // Send a specific message originating from the device.
   console.log("["+(overrideSender ? "REMOTE-" : "")+"PUB-SUB]", deviceAndTopic, ":", message);
   mainWindow.webContents.send(deviceAndTopic, message);
+
   // Send this message globally, no device just topic.
+  // Before we send the topic globally we want to append the UUID of the device that this message originated from.
+  message['uuid'] = messageOrigin;
+  // Print the message to the console and send the global message
   console.log("["+(overrideSender ? "REMOTE-" : "")+"PUB-SUB]", topic, ":", message);
   mainWindow.webContents.send(topic, message);
 

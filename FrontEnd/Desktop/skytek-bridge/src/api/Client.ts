@@ -142,9 +142,25 @@ function addEvent(device : SkyTekDevice, listener : SkyTekSubscriber){
   }
   eventListeners.get(device).push(listener);
 }
-const globalEventListeners = Array<SkyTekSubscriber>();
+const globalEventListeners : Map<string, SkyTekSubscriber> = new Map<string, SkyTekSubscriber>();
 function addGlobalEvent(listener : SkyTekSubscriber){
-  globalEventListeners.push(listener);
+  globalEventListeners.set(listener.id, listener);
+  console.log("globalEventListeners", globalEventListeners.size);
+}
+
+function removeGlobalEvent(listener : SkyTekSubscriber) : boolean {
+  // If the listener is valid
+  if (listener) {
+    // If we know about this listener.
+    if (globalEventListeners.has(listener.id)) {
+      // Delete the entry for this listener.
+      globalEventListeners.delete(listener.id);
+      // Return true because we removed the listener.
+      return true;
+    }
+  }
+  // Return false, we could not find and/or remove the supplied listener
+  return false;
 }
 
 /**
@@ -173,6 +189,10 @@ export function subscribe(device : SkyTekDevice, topic : string, callback : (dat
 
   // Return this subscriber
   return subscriber;
+}
+
+export function unsubscribe(subscriber : SkyTekSubscriber) : boolean{
+  return removeGlobalEvent(subscriber);
 }
 
 /**

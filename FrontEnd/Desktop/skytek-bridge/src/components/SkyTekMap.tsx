@@ -15,7 +15,7 @@ import { useStore } from 'zustand'
 import { useDeviceStore } from '../api/store/DeviceStore';
 
 // API
-import { subscribeGlobal } from '../api/Client';
+import { subscribeGlobal, unsubscribe } from '../api/Client';
 
 // Define constants to be referenced below
 
@@ -57,8 +57,9 @@ const SkyTekMap = ({ height }: Props) => {
       }
     });
 
+    // Executed on unmount.
     return () => {
-
+      unsubscribe(subscriber);
     }
   }, []);
 
@@ -67,7 +68,7 @@ const SkyTekMap = ({ height }: Props) => {
       <AutoSizer>
         {({ height, width }) => (
           <PigeonMap center={[42.345280, -71.552193]} zoom={12} width={width} height={height}>
-            {positions.map((position, index) => (<Marker key={index} anchor={[position.lat, position.lon]} payload={1} onClick={({ event, anchor, payload }) => {}} />))}
+            {positions.map((position, index) => (<Marker color={"#FF0000"} key={index} anchor={[position.lat, position.lon]} payload={1} onClick={({ event, anchor, payload }) => {}} />))}
 
             {/* <Overlay anchor={[position.lat, position.lon]} offset={[120, 79]}>
                 <img src='pigeon.jpg' width={240} height={158} alt='' />
