@@ -52,7 +52,10 @@ interface Props {
 // TODO: get from ENV file.
 const SIDEBAR_WIDTH = 64;
 
+let lastHeartbeat = Date.now();
+
 const SideBar = ({}: Props) => {
+  // State variables
 
   // Here is the Zustand store of our devices.
   const deviceStore = useStore(useDeviceStore);
@@ -87,6 +90,10 @@ const SideBar = ({}: Props) => {
     return [];
   }
 
+  const timeSinceLastHeartbeat = () => {
+    return Date.now()
+  }
+
   return (
     <Drawer
         sx={{
@@ -105,9 +112,9 @@ const SideBar = ({}: Props) => {
         open={hasDevice()}
       >
         {/* Render the PulseDot for to visualize heartbeat of this device */}
-        <DrawerHeader>
+        <DrawerHeader style={{marginTop:'4px', marginBottom:'4px'}}>
           {deviceStore.selected ? <PulseDot device={deviceStore.selected}>
-            <Tooltip title={"Last Heartbeat" + 200 + "ms"} placement='left'>
+            <Tooltip title={"Last Heartbeat" + (Math.random()) + "ms"} placement='left'>
               <IconButton 
                 style={{width:'100%', height:'100%'}}
                 onClick={() => {

@@ -1,16 +1,17 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { SkyTekDevice } from '../types';
-import { subscribe } from '../api/Client';
+import { SkyTekSubscriber, subscribe, unsubscribe } from '../api/Client';
 
 interface Props {
   children:ReactNode | null;
   device: SkyTekDevice;
+  onHeartbeat? : () => void
 }
 
 const HEARTBEAT_RATE = 1000;
 const WATCHDOG_TIMER = HEARTBEAT_RATE * 2;
 
-const PulseDot = ({ children, device }: Props) => {
+const PulseDot = ({ children, device, onHeartbeat }: Props) => {
 
   // We want to be able to tell our PulseDot to pulse so we need to hold a reference to a variable to indicate pulse
   const [shouldPulse, setShouldPulse] = useState<boolean>(false);
@@ -21,12 +22,19 @@ const PulseDot = ({ children, device }: Props) => {
 
   useEffect(() => {
     refresh();
+    
+    console.log("Adding Subscriber");
 
-    // Subscribe to the supplied devices "heartbeat" message
-    let subscriber = subscribe(device, "heartbeat", (data) => {
+    // When this component is mounted in the dom, subscribe to heartbeat messages.
+    let subscriber : SkyTekSubscriber = subscribe(device, "heartbeat", (data) => {
       // Notify this component that we should pulse.
       setShouldPulse(true);
 
+      // If there is a heartbeat callback defined
+      if (onHeartbeat != null) {
+        onHeartbeat();
+      }
+      
       console.log("Heartbeat data", data);
 
       // Add a timeout to indicate that pulse should stop 100ms later.
@@ -35,12 +43,22 @@ const PulseDot = ({ children, device }: Props) => {
       }, 100);
     });
 
+    // When unnmounted from dom
     return () => {
+      // If we have a timer, clear the timer
       if(timer){
         clearInterval(timer);
       }
+
+      // de-register our subscriber
+      if(unsubscribe(subscriber)){
+        console.log("Unsubscribed");
+      } else {
+        console.error("Could not Unsubscribe");
+      }
     }
   }, []);
+
   let refresh = () => {
     if(timer){
       clearInterval(timer);
@@ -51,8 +69,6 @@ const PulseDot = ({ children, device }: Props) => {
     setTimer(timeout);
   }
 
-
-  // When this component is mounted in the dom, subscribe to heartbeat messages.
   useEffect(() => {
     if(shouldPulse){
       if(timer){

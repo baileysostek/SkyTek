@@ -7,11 +7,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { SkyTekDevice } from "../types";
 import { ipcMain } from "electron";
 import { log } from "./logging/Logger";
+import Express from 'express';
 
 // Import FS
 import * as fs from "fs";
 
 // TODO: Refactor to config file.
+// Flag for if this is debug or not
+const DEBUG = true;
 // Define constants for capabilities
 const CAPABILITIES_DIRECTORY_PATH = "./src/components/capabilities/"; // Relative Path to Base
 const CAPABILITY_PREFIX = "SkyTek_"; // Prefix for files.
@@ -92,6 +95,14 @@ class Server {
   static getInstance() : Server {
     return this.instance;
   }
+
+  /**
+   * This function is called whenever a message is processed by the device
+   */
+  static processMessage(data : JSON) : boolean {
+
+    return false;
+  }
 }
 
 
@@ -120,8 +131,33 @@ function init(){
   console.log("Capability Handlers discovered:", capabilities);
   // Tell the frontend which capabilities this backend recognizes.
   mainWindow.webContents.send("/getRegisteredCapabilities", capabilities);
+
+  // If this is debug
+  if (DEBUG) {
+    // Setup an interval to display debug information.
+    setInterval(() => {
+      console.log(callbacks.values.length, "waiting callbacks.");
+    }, 1000)
+  }
+
+  // Initialize our express instance
+  const app = Express();
+
+  app.get('/devices', function (req, res) {
+    res.send()
+  })
+
+  app.post('/test', function (req, res) {
+    res.send('Hello World')
+  })
+  
+  app.listen(8080)
 }
 
+/**
+ * This function discoveres all devices connected to the host's serial ports. This function will notify the frontend when a device is disconnected/discovered and will authenticate through a handshake that the connected devices are SkyTek devices.
+ * @returns 
+ */
 export function discover():  Promise<Array<SkyTekDevice>> {
   // We don't know how long this function will take to return, so we will return a promise that we can then observe the lifecycle of.
   return new Promise((resolve, reject) => {
@@ -177,13 +213,15 @@ export function discover():  Promise<Array<SkyTekDevice>> {
               console.log('Error: Could not write message.');
               return reject(err?.message);
             } else {
-              console.log("Device connected on port:", portPath, ". Attempting to connect to device...");
+              console.log("Device connected on port:", portPath, "Attempting to connect to device...");
               console.log(request);
 
-              // Pipe all data from this port to our callback listeners.
+              // Define a handler for when this device this serial port sends data to the host.
               requestResponseListener = (data) => {
                 resolveCallbacks(null, data);
               };
+
+              // Pipe all data from this port to our callback listeners.
               parser.on('data', requestResponseListener);
             }
             
@@ -273,6 +311,7 @@ export function discover():  Promise<Array<SkyTekDevice>> {
       // We have constructed a promise which tries to connect to a port and communicate with a SkyTek device.
       // Here we execute all of those promises and wait for them to return.
       Promise.all(connections).then((data) => {
+
       }).catch((err) => {
         console.log("Promise All Error:", err);
       }).finally(() => {
@@ -287,7 +326,6 @@ export function discover():  Promise<Array<SkyTekDevice>> {
         //Return the map of connected devices
         resolve(skytekDevices);
       });
-
     }).catch((error) => {
       reject(error);
     });
@@ -337,7 +375,11 @@ export function synchronizeClientServerDevices(clientDevices : Array<SkyTekDevic
 }
 
 /**
- * This function allows someone to write to the standard in (stdin) of a Serial port and listen for the response.
+ * This function allows for a skytek device to be queried.
+ * @param skyTekDevice
+ * @param command 
+ * @param args 
+ * @returns 
  */
 export function query(skyTekDevice : SkyTekDevice, command : string, args : any = []): Promise<JSON> {
   // Check to see if our command starts with the command character
@@ -386,11 +428,20 @@ function registerCallback(uuid : string, callback : (data : JSON | null) => void
   callbacks.set(uuid, callback);
 }
 
-// Our responses should be json data.
+/**
+ * This function is the handler used to decode messages from edge devices and route them through this frontend ecosystem.
+ * NOTE: The modality of how the data gets into resolveCallbcacks does not matter, it could be over USB, TCP/UDP, RS232 anything.
+ * Once a message has been constructed it should be put through this function to be injected into the system
+ * @param device 
+ * @param jsonData 
+ * @returns 
+ */
 function resolveCallbacks(device : SkyTekDevice | null, jsonData : string){
   try{
     // Try parse the json
     let json = JSON.parse(jsonData);
+
+    // If we are logging the data, write this message to the log.
 
     // If we have a json object with a key of "id", store that value
     // Any message that passes back an "id" is a QUERY type message and we have a single callback which needs to resolve that message
@@ -437,14 +488,14 @@ function resolveCallbacks(device : SkyTekDevice | null, jsonData : string){
       // Remove the topic entry from the JSON data
       delete json.topic;
 
-      // Send the message
+      // Send the message to the frontend. 
       publishMessageOnTopic(topic, json, messageOrigin, overrideSender);
 
       // Return from this function, we have handled this message.
       return;
     }
 
-  }catch(err){
+  } catch(err) {
     // If we get an error print the error.
     if(err instanceof SyntaxError){
       // Device-side error

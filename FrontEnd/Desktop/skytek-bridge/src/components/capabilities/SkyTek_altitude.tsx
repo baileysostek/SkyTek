@@ -1,8 +1,5 @@
-import { ReactNode, useEffect, useState } from 'react';
-import { useDeviceStore } from '../../api/store/DeviceStore';
+import { useEffect, useState } from 'react';
 import { subscribeGlobal, unsubscribe } from '../../api/Client';
-
-import { useStore } from 'zustand';
 
 interface Props {
    
@@ -15,6 +12,7 @@ const SkyTek_altitude = ({}: Props) => {
   useEffect(() => {
     // Here we will subscribe to all GPS messages
     let subscriber = subscribeGlobal("/altitude", (data : JSON) => {
+      console.log(data);
       setAltitude(data.alt);
     });
 

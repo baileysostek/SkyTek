@@ -54,19 +54,17 @@ ipcRenderer.on(REMOVE_DEVICE, (_event, device : SkyTekDevice) => {
 
       // Keep a count of the listeners we removed.
       let removedCount = 0;
-      let initialCount = eventListeners.get(device).length;
+      let initialCount = eventListeners.get(device).size;
 
       // For each eventListener
       for(let listener of listeners){
         if(listener.autoCleanup){ // Remove the event listener if autoCleanup is enabled.
-          let index = listeners.indexOf(listener);
-          // Remove
-          listeners.splice(index, 1)
+          listeners.delete(listener);
           removedCount++;
         }
       }
 
-      console.log("[CLEANUP] - Listeners before:", initialCount, "Listeners after:", eventListeners.get(device).length, "Removed:", removedCount);
+      console.log("[CLEANUP] - Listeners before:", initialCount, "Listeners after:", eventListeners.get(device).size, "Removed:", removedCount);
 
       // TODO: cleanup the selected device if it just dropped out.
     }
@@ -127,25 +125,51 @@ export function query(data:any = null, duration:number = QUERY_TIMEOUT) : Promis
 }
 
 // When using the Event System some topics can be subscribed to. We define a custom type representing the subscriberID and callback for each instance of a listener.
-type SkyTekSubscriber = {
+export type SkyTekSubscriber = {
   id: string,
   topic: string,
   autoCleanup: boolean, 
-  listener: (event: IpcRendererEvent, ...args: any[]) => void
+  topicCallback: (event: IpcRendererEvent, ...args: any[]) => void,
+  listener: typeof ipcRenderer.on
 }
 
 // Hold onto a list of all subscriber actions, these events will be automatically cleaned up by default.
-const eventListeners = new Map<SkyTekDevice, Array<SkyTekSubscriber>>();
-function addEvent(device : SkyTekDevice, listener : SkyTekSubscriber){
+const eventListeners = new Map<SkyTekDevice, Set<SkyTekSubscriber>>();
+const eventListenersPrime = new Map<SkyTekSubscriber, SkyTekDevice>();
+function addEventListener(device : SkyTekDevice, listener : SkyTekSubscriber){
   if(!eventListeners.has(device)){
-    eventListeners.set(device, new Array<SkyTekSubscriber>());
+    eventListeners.set(device, new Set<SkyTekSubscriber>());
   }
-  eventListeners.get(device).push(listener);
+  eventListeners.get(device).add(listener);
+  eventListenersPrime.set(listener, device);
 }
+
 const globalEventListeners : Map<string, SkyTekSubscriber> = new Map<string, SkyTekSubscriber>();
 function addGlobalEvent(listener : SkyTekSubscriber){
   globalEventListeners.set(listener.id, listener);
-  console.log("globalEventListeners", globalEventListeners.size);
+}
+
+function removeEvent(listener : SkyTekSubscriber) : boolean {
+  // If the listener is valid
+  if (listener) {
+    // If we know about this listener.
+    if (eventListenersPrime.has(listener)) {
+      // Get the pool of SkyTekSubscribers associated with this device
+      let device = eventListenersPrime.get(listener);
+      // Now try to remove the listener from this specific device's pool of Event Listeners
+      if (eventListeners.has(device)) {
+        let deviceEventListeners = eventListeners.get(device);
+        if (deviceEventListeners.has(listener)) {
+          console.log(listener)
+          ipcRenderer.off(listener.topic, listener.topicCallback);
+          deviceEventListeners.delete(listener);
+          return true;
+        }
+      }
+    }
+  }
+  // Return false, we could not find and/or remove the supplied listener
+  return false;
 }
 
 function removeGlobalEvent(listener : SkyTekSubscriber) : boolean {
@@ -153,6 +177,10 @@ function removeGlobalEvent(listener : SkyTekSubscriber) : boolean {
   if (listener) {
     // If we know about this listener.
     if (globalEventListeners.has(listener.id)) {
+      // Deregister the ipcChannel event listener
+      if (listener.listener) {
+        ipcRenderer.off(listener.topic, listener.topicCallback);
+      }
       // Delete the entry for this listener.
       globalEventListeners.delete(listener.id);
       // Return true because we removed the listener.
@@ -176,23 +204,24 @@ export function subscribe(device : SkyTekDevice, topic : string, callback : (dat
     id : uuidv4(),
     topic : "/"+device.uuid+(topic.startsWith("/") ? topic : "/" + topic),
     autoCleanup: true,
-    listener : (_event, data) => {
+    topicCallback : (_event, data) => {
       callback(data);
-    }
+    },
+    listener: null
   }
 
   // Register this subscriber with IPC
-  ipcRenderer.on(subscriber.topic, subscriber.listener);
+  ipcRenderer.on(subscriber.topic, subscriber.topicCallback);
 
   // Store this subscriber in our map of eventListeners
-  addEvent(device, subscriber);
+  addEventListener(device, subscriber);
 
-  // Return this subscriber
+  // Return this subscriber. This subscriber can be passed to the unsubscribe function in the future to remove it from the pool of event liseners.
   return subscriber;
 }
 
 export function unsubscribe(subscriber : SkyTekSubscriber) : boolean{
-  return removeGlobalEvent(subscriber);
+  return removeEvent(subscriber) || removeGlobalEvent(subscriber);
 }
 
 /**
@@ -207,13 +236,14 @@ export function subscribeGlobal(topic : string, callback : (data : JSON | null) 
     id : uuidv4(),
     topic : (topic.startsWith("/") ? topic : "/" + topic),
     autoCleanup: true,
-    listener : (_event, data) => {
+    topicCallback : (_event, data) => {
       callback(data);
-    }
+    },
+    listener : null,
   }
 
   // Register this subscriber with IPC
-  ipcRenderer.on(subscriber.topic, subscriber.listener);
+  ipcRenderer.on(subscriber.topic, subscriber.topicCallback);
 
   // Store this subscriber in our map of eventListeners
   addGlobalEvent(subscriber);

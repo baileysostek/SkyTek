@@ -28,7 +28,7 @@ const SideBarOffset = ({children}: Props) => {
   }
 
   return (
-    <div style={{margin:'0px', marginLeft:hasDevice() ? '64px' : '0px', width:hasDevice() ? 'calc(100% - 64px)' : '100%', height:'100%'}}>
+    <div style={{margin:'0px', marginLeft:hasDevice() ? '64px' : '0px', width:hasDevice() ? 'calc(100% - 64px)' : '100%', height:'100%', overflowX: 'hidden', transition: 'all 0.25s linear'}}>
       {children}
     </div>
   );

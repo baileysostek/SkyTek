@@ -13,6 +13,7 @@ import Avatar from '@mui/material/Avatar';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import RocketIcon from '@mui/icons-material/RocketLaunchOutlined';
+import { TextField } from '@mui/material';
 
 // Import our store
 import { useStore } from 'zustand'
@@ -20,7 +21,6 @@ import { useDeviceStore } from '../../api/store/DeviceStore';
 
 // API
 import {getDevices, navigate, refreshDevices, selectDevice} from '../../api/Client';
-import DeviceStatus from './../DeviceStatus';
 
 // Types
 
@@ -43,9 +43,13 @@ const Console = ({} : Props) => {
         <Grid container spacing={2}>
           <Grid item xs={12} style={{padding:'0px'}} >
             <Typography sx={{ mt: 4, mb: 2 }} variant="h6" component="div">
-              Console
+              Console 2
             </Typography>
-
+          </Grid>
+          <Grid item xs={12}>
+            <TextField fullWidth label="Message" variant="filled">
+              Test
+            </TextField>
           </Grid>
         </Grid>
       </Box>

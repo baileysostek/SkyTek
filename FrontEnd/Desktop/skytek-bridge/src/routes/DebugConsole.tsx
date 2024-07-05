@@ -20,7 +20,9 @@ import ListItemAvatar from '@mui/material/ListItemAvatar';
 import ListItemText from '@mui/material/ListItemText';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
 import RocketIcon from '@mui/icons-material/RocketLaunchOutlined';
+
 
 // Types
 interface Props {
@@ -47,7 +49,10 @@ const DebugConsole = ({}: Props) => {
                 <Typography sx={{ mt: 4, mb: 2 }} variant="h6" component="div">
                   Console
                 </Typography>
+              </Grid>
 
+              <Grid item xs={12} style={{padding:'0px'}} >
+                <TextField fullWidth label="Message" variant="filled"/>
               </Grid>
             </Grid>
           </Box>
