@@ -28,6 +28,9 @@ const SKYTEK_ID_REQUEST = 'skytek';
 // This is a map of values we will return
 let devices = new Map<string, ControlledSkyTekDevice>();
 
+// This is a map relating a device UUID to the port that it is connected to.
+let deviceIdToPort = new Map<string, string>();
+
 type ControlledSkyTekDevice = {
   port : SerialPort;
   parser : ReadlineParser;
@@ -143,13 +146,43 @@ function init(){
   // Initialize our express instance
   const app = Express();
 
-  app.get('/devices', function (req, res) {
-    res.send()
+  app.get('/query/:id/:query', function (req, res) {
+    // Determine the port that this device is connected through, based off the device UUID
+    let devicePort = deviceIdToPort.get(req.params.id);
+    // Check if we have a device with that device ID
+    if (devices.has(devicePort)) {
+      let device = devices.get(devicePort);
+      // If we have a device
+      if (device) {
+        let response = {};
+        query(device.device, req.params.query).then((data) => {
+          response = data;
+          res.statusCode = 200;
+        }).catch((error) => {
+          response = error;
+          res.statusCode = 401;
+          console.log("Error", error)
+        }).finally(() => {
+          res.json(response);
+          console.log("Response Sent");
+        });
+      } else {
+        res.send("No device with uuid:" + req.params.id + " exists.");
+      }
+    } else {
+      res.send("No device with uuid:" + req.params.id + " exists.");
+    }
   })
 
-  app.post('/test', function (req, res) {
-    res.send('Hello World')
-  })
+  app.get('/devices', (req, res) => {
+    console.log("Devices", devices);
+    let response = {devices:[]};
+    for(let controlledDevice of devices.values()){
+      let device = controlledDevice.device;
+      response.devices.push(device);
+    }
+    res.json(response);
+  });
   
   app.listen(8080)
 }
@@ -251,7 +284,10 @@ export function discover():  Promise<Array<SkyTekDevice>> {
                 parser : parser,
                 device : device,
                 callback : null,
-              }); 
+              });
+
+              // Link the UUID of this device to the port that it is connected through.
+              deviceIdToPort.set(device_uuid, portPath);
 
               // Now we need to remove the old listener
               parser.removeListener('data', requestResponseListener); // Remove old Listener
@@ -381,7 +417,7 @@ export function synchronizeClientServerDevices(clientDevices : Array<SkyTekDevic
  * @param args 
  * @returns 
  */
-export function query(skyTekDevice : SkyTekDevice, command : string, args : any = []): Promise<JSON> {
+export function query(skyTekDevice : SkyTekDevice, command : string, args : any = [], timeout : number = (10 * 1000)): Promise<JSON> {
   // Check to see if our command starts with the command character
   //TODO: Check that this device has a command handler for the command we are passing.
   return new Promise((resolve, reject) => {
@@ -411,10 +447,16 @@ export function query(skyTekDevice : SkyTekDevice, command : string, args : any 
         
         // Add the listener to our set of callbacks
         return registerCallback(uuid, (data : JSON | null) => {
-            console.log("[QUERY-RESPONSE]", skyTekDevice.port, ":", uuid, ":", data);
-            resolve(data ? data : {} as JSON);
+          console.log("[QUERY-RESPONSE]", skyTekDevice.port, ":", uuid, ":", data);
+          resolve(data ? data : {} as JSON);
         })
       });
+
+      // Here we define a fallback promise rejection to fail the promise after a timeout.
+      // This protects our queries from hanging if an edge device fails to repsond after the defined TIMEOUT
+      setTimeout(() => {
+        return reject("Query timed out");
+      }, timeout);
 
     }else{
       resolve({} as JSON);
@@ -558,9 +600,13 @@ function broadcastDeviceAvailable(device : SkyTekDevice){
 
 function removeDevice(skyTekDevice : SkyTekDevice){
   if(devices.has(skyTekDevice.port)){
+    // Desociate the device_uuid from this port
+    deviceIdToPort.delete(skyTekDevice.uuid);
+    // Delete this device from our list of devices.
     devices.delete(skyTekDevice.port);
     // Send an IPC message to remove this device.
     mainWindow.webContents.send("/removeDevice", skyTekDevice);
+
 
     console.log("Removed Device", skyTekDevice.port);
   }
