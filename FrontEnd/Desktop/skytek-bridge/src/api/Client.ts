@@ -160,7 +160,7 @@ function removeEvent(listener : SkyTekSubscriber) : boolean {
       if (eventListeners.has(device)) {
         let deviceEventListeners = eventListeners.get(device);
         if (deviceEventListeners.has(listener)) {
-          console.log(listener)
+          // Remove the listener
           ipcRenderer.off(listener.topic, listener.topicCallback);
           deviceEventListeners.delete(listener);
           return true;

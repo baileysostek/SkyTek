@@ -447,19 +447,27 @@ void setState(FlightComputerState new_state) {
 
 // Command handler to read and process the incoming serial commands from the SkyTek Flight Software.
 void parse_serial_command(){
+  // Store when we have found the command start character.
   bool parsing_command = false;
-  while(Serial.available()){
+  // While there is serial data to read, read it
+  while (Serial.available()) {
+    // Get the character that is available 
     char command_character = (char)Serial.read();
-    if(!parsing_command){
-      if(command_character == COMMAND_START_CHARACTER){
+    // If we are not parsing a command yet, We need to check if the sent character is a command start character.
+    if (!parsing_command) {
+      // If this is a command start character.
+      if (command_character == COMMAND_START_CHARACTER) {
         // We know that we are now either parsing command data or a UUID.
         command_message_index = 0;
         parsing_command = true;
 
-        while(Serial.available()){
+        // Some commands issued to a SkyTek device are prefixed with a UUID, that the edge device re-publishes when a response is ready.
+        // Here we need to determine if this is a command that requires a response or not.
+        while (Serial.available()) {
+          // Read in the uuid character.
           char uuid_character = (char)Serial.read();
           // Check that we have not hit the escape character.
-          if(uuid_character == UUID_COMMAND_DELIMTER){
+          if (uuid_character == UUID_COMMAND_DELIMTER) {
             // We have a real UUID so clear out our command buffer.
             for(int i = 0; i < command_message_index; i++){
               command_buffer[i] = '\0'; // Clear the command buffer
@@ -467,35 +475,43 @@ void parse_serial_command(){
             command_message_index = 0;
             break; // We have finished parsing our id. Up to 32 characters.
           }
-          if(uuid_character == COMMAND_END_CHARACTER){
+          // Check if we have hit the UUID escape character.
+          if (uuid_character == COMMAND_END_CHARACTER) {
             // We did not get a UUID. clear out the UUID buffer
             for(int i = 0; i < command_message_index; i++){
               query_uuid_buffer[i] = '\0'; // Clear the command buffer
             }
+            // This is a command without a UUID, process the command, no need to send a result with a UUID.
             return process_serial_command();
           }
           
           // Process the UUID
-          if(command_message_index < UUID_SIZE){
+          if (command_message_index < UUID_SIZE) {
             query_uuid_buffer[command_message_index] = uuid_character;
             command_buffer[command_message_index] = uuid_character;
             command_message_index++;
-          }else{
+          } else {
             break;
           }
         }
         continue;
       }
-    }else{
+    } else {
+      // Here we are parsing a command.
       // Check if the current character is the "COMMAND_END_CHARACTER"
       if(command_character == COMMAND_END_CHARACTER){
         break;
       }
-      // We recieved the start character
+      // We received the start character
       command_buffer[command_message_index] = command_character;
       command_message_index++;
+      // Safety check that we have not received a command that is too big.
       if(command_message_index >= COMMAND_BUFFER_SIZE){
-        Serial.println("Error: Command too long.");
+        // Send a message to indicate that there was an error pasting the command because the command string was too long.
+        char message[128 + COMMAND_BUFFER_SIZE] = {'\0'};
+        sprintf(message, "\"error\":true,\"msg\":\"Error: Command '%s' was too long to be parsed, because it exceeded the maximum character limit of %i\"", command_buffer, COMMAND_BUFFER_SIZE);
+        send_query_response(message);
+        // Reset our parsing flags
         parsing_command = false;
         break;
       }
@@ -508,10 +524,14 @@ void parse_serial_command(){
   }
 }
 
+// Once we have determined that a serial command was requested, we need to decode what serial command was requested so we can perform the proper action.
 void process_serial_command(){
   if (strcmp(command_buffer, "skytek") == 0) {
     // List software Version
-    Serial.printf("{\"id\":\"%s\",\"uuid\":\"%s\",\"version\":\"%s\"}\n", query_uuid_buffer, device_uuid, SKYTEK_API_VERSION);
+    char message[255] = {'\0'};
+    sprintf(message, "\"version\":\"%s\"", SKYTEK_API_VERSION);
+    send_query_response(message);
+    // Serial.printf("{\"id\":\"%s\",\"uuid\":\"%s\",}\n", query_uuid_buffer, device_uuid, SKYTEK_API_VERSION);
   } else if (strcmp(command_buffer, "version") == 0) {
     // List software Version
     Serial.printf("Board Software Version:%s\n", VERSION);
@@ -537,14 +557,38 @@ void process_serial_command(){
     // Query response listing all of our capabilities.
     Serial.printf("{\"id\":\"%s\",\"uuid\":\"%s\",\"capabilities\":%s}\n", query_uuid_buffer, device_uuid, SKYTEK_CAPABILTIES); // Substitute our capabilities in as a literal array.
   } else if (strcmp(command_buffer, "gps") == 0) {
-    Serial.printf("{\"id\":\"%s\",\"lat\":%f,\"lng\":%f}\n", query_uuid_buffer, gps_lat, gps_lng);
-  }else {
-    Serial.printf("Error: Command '%s' was not recognised.\n", command_buffer);
+    char message[128] = {'\0'};
+    sprintf(message, "\"lat\":%f,\"lng\":%f", gps_lat, gps_lng);
+    send_query_response(message);
+  } else if (strcmp(command_buffer, "reset") == 0) {
+    char message[128] = {'\0'};
+    sprintf(message, "\"rebooting\":true");
+    send_query_response(message);
+    delay(100);
+    USB1_USBCMD = 0;
+    delay(20);
+    USB1_USBCMD = 1;
+  } else {
+    char message[128 + COMMAND_BUFFER_SIZE] = {'\0'};
+    sprintf(message, "\"error\":true,\"msg\":\"Error: Command '%s' was not recognised.\"", command_buffer);
+    send_query_response(message);
   }
   // Cleanup our buffers to do this again.
   for(int i = 0; i < command_message_index; i++){
     command_buffer[i] = '\0';
   }
+}
+
+// TODO: Replace with Flat buffers.
+void send_query_response(const char* message) {
+  char prefix[UUID_SIZE + 16] = {'\0'}; 
+  // First we want to determine if we need to send a response with an ID or not.
+  if (query_uuid_buffer[0] != '\0') {
+    // Publish response with the 'id' specified
+    sprintf(prefix, "\"id\":\"%s\",", query_uuid_buffer);
+  }
+  // The message itself, TODO: This should be a flat buffer, sending JSON as a string is inefficient.
+  Serial.printf("{%s\"uuid\":\"%s\",%s}\n", prefix, device_uuid, message);
 }
 
 // This is a blocking function which reads in all incoming data from the UART connected to the NEMA GPS board and updates our lat and lng positions.
@@ -851,7 +895,7 @@ void printBMPValues(){
   }
   bmp_average_altitude /= BMP_SAMPLES;
 
-  Serial.printf("{\"topic\":\"/altitude\",\"alt\":%f}\n", bmp_average_altitude);
+  // Serial.printf("{\"topic\":\"/altitude\",\"alt\":%f}\n", bmp_average_altitude);
 }
 
 void calibrateBMP(){
