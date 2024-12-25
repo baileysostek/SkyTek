@@ -12,7 +12,6 @@ import { v4 as uuidv4 } from 'uuid';
 // Import Zustand Stores
 import { useDeviceStore } from './store/DeviceStore';
 import { IpcRendererEvent } from 'electron';
-import { Router } from 'react-router-dom';
 import { DEVICE_CAPABILITIES, ADD_DEVICE, REMOVE_DEVICE } from './Topics';
 
 // These are the functions that connect to the API, they store data in the zustand store
@@ -97,8 +96,14 @@ function timeout(prom : Promise<any>, time : number) : Promise<number> {
 	let timer : any;
 	return Promise.race([
 		prom,
-		new Promise((_r, rej) => timer = setTimeout(rej, time))
-	]).finally(() => clearTimeout(timer));
+		new Promise((resolve, reject) => {
+      timer = setTimeout(() => {
+        reject("Timeout")
+      }, time)
+    })
+	]).catch((error) => {
+    console.log("Caught")
+  }).finally(() => clearTimeout(timer));
 }
 
 export function get(route:string, data:any = null, duration:number = QUERY_TIMEOUT) : Promise<any> {
@@ -112,10 +117,10 @@ export function get(route:string, data:any = null, duration:number = QUERY_TIMEO
   }), duration);
 }
 
-export function query(data:any = null, duration:number = QUERY_TIMEOUT) : Promise<any> {
+export function query(device : SkyTekDevice, message : string, data:Array<any> = [], duration:number = QUERY_TIMEOUT) : Promise<any> {
   return timeout(new Promise((resolve, reject) => {
     // Here is where we send the event.
-    ipcRenderer.invoke("/query", data).then((result : any) => {
+    ipcRenderer.invoke("/query", [device.uuid, message, ...data]).then((result : any) => {
       resolve(result);
     }).catch((error) => {
       console.log("Error", error)

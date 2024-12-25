@@ -34,8 +34,6 @@ const PulseDot = ({ children, device, onHeartbeat }: Props) => {
       if (onHeartbeat != null) {
         onHeartbeat();
       }
-      
-      console.log("Heartbeat data", data);
 
       // Add a timeout to indicate that pulse should stop 100ms later.
       setTimeout(() => {

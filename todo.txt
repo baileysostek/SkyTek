@@ -2,3 +2,8 @@
 - Refactor GPS code to take in string from multiple modalities
 - Refactor output code to output over multiple modalities
 - Refactor JSON to be Protobuf
+
+Development Sprints
+- logging - Logging update. Implement logging with some kind of db and enable replay of data. Enable console component
+- state-graph - Maintain a real time state of the network represented in a tree structure
+- binary-checksum - implement a data transmission modality that uses binary encoding instead of strings and implements checksums. 

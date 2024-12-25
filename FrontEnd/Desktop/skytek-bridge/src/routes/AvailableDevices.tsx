@@ -13,6 +13,8 @@ import Typography from '@mui/material/Typography';
 import DeviceList from '../components/DeviceList';
 import { useEffect } from 'react';
 import { SkyTekDevice } from '../types';
+import { Button } from '@mui/material';
+import { query } from 'src/api/Client';
 
 // Types
 interface Props {

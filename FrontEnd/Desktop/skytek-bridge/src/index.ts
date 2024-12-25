@@ -5,7 +5,7 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
-import {discover, query, synchronizeClientServerDevices} from "./api/Server";
+import {discover, getDeviceByUUID, query, synchronizeClientServerDevices} from "./api/Server";
 import { SkyTekDevice } from './types';
 import { refreshDevices } from './api/Client';
 
@@ -90,7 +90,24 @@ ipcMain.handle('/devices', async (event: any, someArgument: any) => {
   return result;
 })
 
-ipcMain.handle('/query', async (event: any, args : [SkyTekDevice, string, ...any]) => {
+ipcMain.handle('/query', async (event: any, args : [string, string, ...any]) => {
+  // Get the UUID passed
+  console.log("Args:", args);
+  let deviceUUID : string = args[0];
+
+  // Check if we have this device
+  let device : SkyTekDevice | null = getDeviceByUUID(deviceUUID);
+  
+  // Return if device is null
+  if (!device) {
+    throw new Error('Could not find Device:' + deviceUUID);
+  }
+
+  // We have the device, so substitute deviceUUID for device itself.
+  // @ts-ignore | We want to override the string reference to SkyTekDevice that was passed, with the device itself.
+  args[0] = device;
+
+  // Query this device
   const result = await query(...args); // Get all devices.
   return result;
 })

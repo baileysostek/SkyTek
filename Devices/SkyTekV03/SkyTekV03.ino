@@ -36,7 +36,7 @@ char led_b = 255;
 #define COMMAND_END_CHARACTER '\n'
 #define COMMAND_BUFFER_SIZE 64
 // This buffer stores commands that a user might send to the controller.
-char command_buffer[COMMAND_BUFFER_SIZE] = {'\0'};
+char command_buffer[COMMAND_BUFFER_SIZE + 1] = {'\0'};
 int command_message_index = 0; 
 
 // UUID for message response handling
@@ -51,6 +51,8 @@ char query_uuid_buffer[UUID_SIZE + 1] = {'\0'}; // Extra 1 for Null Terminator
 #define NEMA_MESSAGE_START_CHARACTER '$'
 char message_buffer[256] = {'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'};
 int message_index = 0; 
+
+#define STRESS "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse diam orci, tincidunt a nunc a, tempor efficitur magna. Praesent a fringilla ex, sed posuere dui. Sed odio tortor, dapibus ut ullamcorper id, aliquet eget nulla. Pellentesque euismod tincidunt lectus. Vestibulum magna augue, tincidunt iaculis iaculis varius, tincidunt vel orci. Phasellus quis velit at dolor blandit pretium eget ac massa. Nullam euismod est eros, et ullamcorper erat euismod sed. Vivamus venenatis diam at quam porta, sed auctor nunc tincidunt. Vestibulum tincidunt felis nec quam maximus, vel bibendum dui pretium. Phasellus vestibulum aliquam rhoncus. Quisque et sollicitudin lorem, pellentesque efficitur diam. Fusce id dictum lorem. Duis quis consectetur orci. Pellentesque metus dui, tempor in sem sit amet, lobortis placerat magna. Donec molestie lacus eu leo mollis, quis ultricies enim fermentum. Aliquam vel ipsum vitae enim luctus tincidunt ac vel risus. Vestibulum quis lorem euismod, pellentesque sapien sed, vestibulum sem. Sed eu metus nec urna pharetra consequat. Etiam purus ligula, porttitor et maximus non, mattis eget metus. Duis vel egestas mi. Vivamus vel lobortis magna, in pretium elit. Fusce placerat risus sit amet nisl imperdiet tempus. Integer vel nulla tortor. Aliquam eleifend nulla sem, nec dignissim nulla accumsan et. Nullam sit amet nisi id dui tempus aliquet nec quis arcu. Nulla tempus ultrices leo a imperdiet. Integer in velit elit. Phasellus scelerisque non massa finibus fermentum. Suspendisse leo mi, viverra at odio quis, semper feugiat lacus. Maecenas laoreet feugiat mattis. Lorem ipsum dolor sit amet, consectetur adipiscing elit. In posuere posuere dignissim. Aliquam nec nulla neque. Donec gravida faucibus egestas. Pellentesque ac consequat massa, eget iaculis ipsum. Interdum et malesuada fames ac ante ipsum primis in faucibus. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Quisque et ultrices eros, vel eleifend nisl. Aliquam lobortis justo non mauris sollicitudin pharetra. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Phasellus tempus ultrices ligula, quis varius diam suscipit sed. Donec tempus semper enim, et molestie sem. Sed libero massa, maximus vel congue at, convallis at elit. Donec nibh dolor, elementum et lorem sed, posuere imperdiet dolor. Nam sit amet cursus leo, a tristique nibh. Aenean nec justo rutrum, accumsan neque tristique, bibendum lorem. Fusce blandit nisl nec nunc pharetra ultricies. Morbi porta enim vitae tempus bibendum. Sed gravida, massa nec facilisis fermentum, metus nunc porta dui, sit amet venenatis tortor nisi non eros. Nulla at erat quis tortor dapibus molestie. Proin at massa et ante egestas auctor non eu justo. In vulputate nunc non sem fermentum faucibus. Donec eu tortor ultrices, egestas erat elementum, tempus dolor. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Donec molestie, augue id gravida pretium, nibh urna tincidunt elit, et gravida velit elit et mi. Praesent sagittis varius aliquet."
 
 // Here are buffers for the NEMA messages.
 char nema_op_buffer[4] = {'\0', '\0', '\0', '\0'};
@@ -506,7 +508,7 @@ void parse_serial_command(){
       command_buffer[command_message_index] = command_character;
       command_message_index++;
       // Safety check that we have not received a command that is too big.
-      if(command_message_index >= COMMAND_BUFFER_SIZE){
+      if(command_message_index > COMMAND_BUFFER_SIZE){
         // Send a message to indicate that there was an error pasting the command because the command string was too long.
         char message[128 + COMMAND_BUFFER_SIZE] = {'\0'};
         sprintf(message, "\"error\":true,\"msg\":\"Error: Command '%s' was too long to be parsed, because it exceeded the maximum character limit of %i\"", command_buffer, COMMAND_BUFFER_SIZE);
@@ -534,7 +536,9 @@ void process_serial_command(){
     // Serial.printf("{\"id\":\"%s\",\"uuid\":\"%s\",}\n", query_uuid_buffer, device_uuid, SKYTEK_API_VERSION);
   } else if (strcmp(command_buffer, "version") == 0) {
     // List software Version
-    Serial.printf("Board Software Version:%s\n", VERSION);
+    char message[255] = {'\0'};
+    sprintf(message, "\"version\":\"%s\"", VERSION);
+    send_query_response(message);
   } else if (strcmp(command_buffer, "connected") == 0) {
     // List Connected Devices
     Serial.println("Connected Devices:");
@@ -564,13 +568,20 @@ void process_serial_command(){
     char message[128] = {'\0'};
     sprintf(message, "\"rebooting\":true");
     send_query_response(message);
-    delay(100);
-    USB1_USBCMD = 0;
-    delay(20);
-    USB1_USBCMD = 1;
+    delay(1000);
+//    USB1_USBCMD = 0;
+//    delay(2000);
+//    USB1_USBCMD = 1;
+    SRC_GPR5 = 0x0BAD00F1;
+    SCB_AIRCR = 0x05FA0004;
+    while (1) ;
   } else {
     char message[128 + COMMAND_BUFFER_SIZE] = {'\0'};
-    sprintf(message, "\"error\":true,\"msg\":\"Error: Command '%s' was not recognised.\"", command_buffer);
+    if (command_buffer[0] == '\0') {
+      sprintf(message, "\"error\":true,\"msg\":\"Error: No command was specified.\"");
+    } else {
+      sprintf(message, "\"error\":true,\"msg\":\"Error: Command '%s' was not recognised.\"", command_buffer);
+    }
     send_query_response(message);
   }
   // Cleanup our buffers to do this again.

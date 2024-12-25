@@ -1,36 +1,25 @@
 // Import React
-import React, { useState } from 'react';
 
 // Import Types
 import { SkyTekDevice } from '../types';
 
 // Material UI
-import AppBar from '@mui/material/AppBar';
-import Button from '@mui/material/Button';
 import { styled } from '@mui/material/styles';
 
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
-import CssBaseline from '@mui/material/CssBaseline';
-import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
 import List from '@mui/material/List';
-import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 
-import HomeIcon from '@mui/icons-material/Home';
-import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import TerminalIcon from '@mui/icons-material/Terminal';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import SettingsIcon from '@mui/icons-material/Settings';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
 import InboxIcon from '@mui/icons-material/MoveToInbox';
 import MailIcon from '@mui/icons-material/Mail';
 
@@ -40,7 +29,7 @@ import { useDeviceStore } from '../api/store/DeviceStore';
 
 
 // API
-import { getRoute, navigate, query, subscribe } from '../api/Client';
+import { navigate } from '../api/Client';
 import PulseDot from './PulseDot';
 import { Tooltip } from '@mui/material';
 

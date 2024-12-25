@@ -108,8 +108,6 @@ class Server {
   }
 }
 
-
-//TODO:singleton
 function init(){
   // If we already have a polling loop going, clear that interval.
   if(device_polling_interval){
@@ -139,14 +137,18 @@ function init(){
   if (DEBUG) {
     // Setup an interval to display debug information.
     setInterval(() => {
-      console.log(callbacks.values.length, "waiting callbacks.");
-    }, 1000)
+      // If we have any waiting callbacks
+      if (callbacks.values.length) {
+        // Print the number of waiting callbacks.
+        console.log(callbacks.values.length, "waiting callbacks.");
+      }
+    }, 1000);
   }
 
   // Initialize our express instance
   const app = Express();
 
-  app.get('/query/:id/:query', function (req, res) {
+  app.get('/query/:id/:query', (req, res) => {
     // Determine the port that this device is connected through, based off the device UUID
     let devicePort = deviceIdToPort.get(req.params.id);
     // Check if we have a device with that device ID
@@ -239,24 +241,25 @@ export function discover():  Promise<Array<SkyTekDevice>> {
           // Here we need to persist the initial listener we use to listen for response
           let requestResponseListener : (chunk: any) => void;
 
-          // Write the command to the port. 
+          // Write the command to the port.
+          // console.log(port.settings.path, request)
           port.write(request, (err) => {
             // Ensure command was written to port.
             if (err) {
               console.log('Error: Could not write message.');
               return reject(err?.message);
-            } else {
-              console.log("Device connected on port:", portPath, "Attempting to connect to device...");
-              console.log(request);
-
-              // Define a handler for when this device this serial port sends data to the host.
-              requestResponseListener = (data) => {
-                resolveCallbacks(null, data);
-              };
-
-              // Pipe all data from this port to our callback listeners.
-              parser.on('data', requestResponseListener);
             }
+
+            console.log("Device connected on port:", portPath, "Attempting to connect to device...");
+            console.log(request);
+
+            // Define a handler for when this device this serial port sends data to the host.
+            requestResponseListener = (data) => {
+              resolveCallbacks(null, data);
+            };
+
+            // Pipe all data from this port to our callback listeners.
+            parser.on('data', requestResponseListener);
             
             // Add the listener to our set of callbacks
             // Eventually this CB will trigger if we get a response from the device.
@@ -395,7 +398,7 @@ export function synchronizeClientServerDevices(clientDevices : Array<SkyTekDevic
     }
   }
 
-  // Now we look for any devices to add, these are any devies that the server has that the client does not.
+  // Now we look for any devices to add, these are any devices that the server has that the client does not.
   for(let serverDevice of devices.values()){
     let serverUUID = serverDevice.device.uuid;
     if(!clientDeviceMap.has(serverUUID)){ // Check if the client has this device or not.
@@ -448,6 +451,15 @@ export function query(skyTekDevice : SkyTekDevice, command : string, args : any 
         // Add the listener to our set of callbacks
         return registerCallback(uuid, (data : JSON | null) => {
           console.log("[QUERY-RESPONSE]", skyTekDevice.port, ":", uuid, ":", data);
+          // It is redundant to send the uuid back with this message. We queried the device by UUID, so we dont need to supply the UUID again in the response.
+          // Strip out the uuid.
+          // @ts-ignore
+          if (data['uuid'] != null) {
+            // @ts-ignore
+            delete data['uuid'];
+          }
+
+          // Resolve and send this data. 
           resolve(data ? data : {} as JSON);
         })
       });
@@ -610,4 +622,15 @@ function removeDevice(skyTekDevice : SkyTekDevice){
 
     console.log("Removed Device", skyTekDevice.port);
   }
+}
+
+export function getDeviceByUUID(uuid : string) : SkyTekDevice | null {
+  // Ensure that we have this device
+  if (!deviceIdToPort.has(uuid)) {
+    console.log("Could not find device:", uuid);
+    return null;
+  }
+  
+  // We have this device.
+  return devices.get(deviceIdToPort.get(uuid)).device;
 }

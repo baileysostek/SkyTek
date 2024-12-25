@@ -1,15 +1,13 @@
 // Import React
-import React, { Children, useState, ReactNode } from 'react';
+import { ReactNode } from 'react';
 
 // Import Types
-import { SkyTekDevice } from '../types';
 
 // Import our store
 import { useStore } from 'zustand'
 import { useDeviceStore } from '../api/store/DeviceStore';
 
 // API
-import { getRoute, navigate, query, subscribe } from '../api/Client';
 
 // Types
 interface Props {

@@ -16,7 +16,6 @@ import { useDeviceStore } from '../api/store/DeviceStore';
 
 
 // API
-import { query } from '../api/Client';
 import PulseDot from './PulseDot';
 
 // Types
