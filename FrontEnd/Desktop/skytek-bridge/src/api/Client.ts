@@ -98,12 +98,13 @@ function timeout(prom : Promise<any>, time : number) : Promise<number> {
 		prom,
 		new Promise((resolve, reject) => {
       timer = setTimeout(() => {
-        reject("Timeout")
+        reject({
+          error : true,
+          msg : "Query timed out."
+        })
       }, time)
     })
-	]).catch((error) => {
-    console.log("Caught")
-  }).finally(() => clearTimeout(timer));
+	]).finally(() => clearTimeout(timer));
 }
 
 export function get(route:string, data:any = null, duration:number = QUERY_TIMEOUT) : Promise<any> {
@@ -120,10 +121,16 @@ export function get(route:string, data:any = null, duration:number = QUERY_TIMEO
 export function query(device : SkyTekDevice, message : string, data:Array<any> = [], duration:number = QUERY_TIMEOUT) : Promise<any> {
   return timeout(new Promise((resolve, reject) => {
     // Here is where we send the event.
-    ipcRenderer.invoke("/query", [device.uuid, message, ...data]).then((result : any) => {
+    ipcRenderer.invoke("/query", [device.uuid, message, ...data]).then((result : QueryResponse) => {
+      // If we get here we need to determine if this result indicates an error or not.
+      if (result && result.error) {
+        // Return error
+        return reject(result);
+      }
+      // If we don't have an error, we can resolve this promise successfully
       resolve(result);
     }).catch((error) => {
-      console.log("Error", error)
+      console.log("Critical Error!", error)
       reject(error)
     })
   }), duration);
@@ -279,3 +286,17 @@ export function getRoute() : string {
 ipcRenderer.on(DEVICE_CAPABILITIES, (_event, capabilityHandlers : Array<string>) => {
   useDeviceStore.getState().setCapabilities(capabilityHandlers);
 });
+
+/**
+ * Types
+ */
+
+export type QueryResponse = {
+  error ?: boolean,
+  errorMessage ?: string,
+}
+
+export type QueryError = {
+  error : boolean;
+  msg : string;
+}

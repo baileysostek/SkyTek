@@ -465,7 +465,7 @@ export function query(skyTekDevice : SkyTekDevice, command : string, args : any 
       });
 
       // Here we define a fallback promise rejection to fail the promise after a timeout.
-      // This protects our queries from hanging if an edge device fails to repsond after the defined TIMEOUT
+      // This protects our queries from hanging if an edge device fails to respond after the defined TIMEOUT
       setTimeout(() => {
         return reject("Query timed out");
       }, timeout);

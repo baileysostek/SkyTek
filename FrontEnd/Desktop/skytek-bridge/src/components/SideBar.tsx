@@ -32,6 +32,7 @@ import { useDeviceStore } from '../api/store/DeviceStore';
 import { navigate } from '../api/Client';
 import PulseDot from './PulseDot';
 import { Tooltip } from '@mui/material';
+import React from 'react';
 
 // Types
 interface Props {
@@ -78,6 +79,14 @@ const SideBar = ({}: Props) => {
     // Otherwise return an empty array.
     return [];
   }
+
+  const [lastHeartbeat, setLastHeartbeat] = React.useState<number>(0);
+  React.useEffect(() => {
+    // If we have a device
+    if (hasDevice()) {
+      deviceStore.selectDevice.subsc
+    }
+  }, [deviceStore.selectDevice]);
 
   const timeSinceLastHeartbeat = () => {
     return Date.now()
