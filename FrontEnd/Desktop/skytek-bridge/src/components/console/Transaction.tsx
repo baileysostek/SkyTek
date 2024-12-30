@@ -1,6 +1,8 @@
 
 // Import React
-import { ListItem, ListItemButton, ListItemText } from '@mui/material';
+import { ArrowBack, ArrowForward, Terminal, TerminalOutlined, Usb } from '@mui/icons-material';
+import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
+import { format } from 'date-fns';
 import React, { useEffect } from 'react';
 
 export enum TransactionStatus {
@@ -31,10 +33,9 @@ type TransactionProps<RequestType, ResponseType> = {
 }
 
 const Transaction = (props : TransactionProps<any, any>) => {
-  return <ListItem>
-    <ListItemButton>
-      {JSON.stringify(props)}
-    </ListItemButton>
+  return <ListItem sx={{padding:0, paddingLeft:'12px'}}>
+   {JSON.stringify(props.transaction)}
   </ListItem>
 }
 export default Transaction;
+

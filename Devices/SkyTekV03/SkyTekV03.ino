@@ -533,7 +533,6 @@ void process_serial_command(){
     char message[255] = {'\0'};
     sprintf(message, "\"version\":\"%s\"", SKYTEK_API_VERSION);
     send_query_response(message);
-    // Serial.printf("{\"id\":\"%s\",\"uuid\":\"%s\",}\n", query_uuid_buffer, device_uuid, SKYTEK_API_VERSION);
   } else if (strcmp(command_buffer, "version") == 0) {
     // List software Version
     char message[255] = {'\0'};
@@ -572,8 +571,8 @@ void process_serial_command(){
 //    USB1_USBCMD = 0;
 //    delay(2000);
 //    USB1_USBCMD = 1;
-    SRC_GPR5 = 0x0BAD00F1;
-    SCB_AIRCR = 0x05FA0004;
+    // SRC_GPR5 = 0x0BAD00F1;
+    // SCB_AIRCR = 0x05FA0004;
     while (1) ;
   } else {
     char message[128 + COMMAND_BUFFER_SIZE] = {'\0'};

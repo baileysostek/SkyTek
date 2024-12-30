@@ -28,6 +28,7 @@ import { useNavigate } from 'react-router-dom';
 import { CircularProgress } from '@mui/material';
 import Transaction, { DeviceTransaction, TransactionStatus } from './Transaction';
 import TransactionList from './TransactionList';
+import ConsoleInputBar from './ConsoleInputBar';
 
 
 // Types
@@ -39,7 +40,6 @@ const Console = ({
   allowedMessagesInFlight = 1
 }: ConsoleProps) => {
   // Store State
-  const [command, setCommand] = React.useState<string>('');
   const [waitingForResponse, setWaitingForResponse] = React.useState<boolean>(false);
 
   const [transactions, setTransactions] = React.useState<Array<DeviceTransaction<any, any>>>([]);
@@ -68,7 +68,7 @@ const Console = ({
     }
   }, [deviceStore.selected]); 
 
-  const queryDevice = () => {
+  const queryDevice = (command : string) => {
     // At this point in time we need to append a new transaction
     let startTime : number= new Date().getTime();
 
@@ -126,7 +126,7 @@ const Console = ({
         {/* Message List */}
         <TransactionList transactions={transactions}/>
       </Box>
-
+      
       {/* Content-fitting box */}
       <Box
         sx={{
@@ -135,48 +135,9 @@ const Console = ({
           padding: 2, // Adds some spacing
         }}
       >
-        {/* Console Input Bar */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center', // Vertically align items
-            gap: 2, // Adds spacing between the boxes
-            width: '100%', // Ensures the parent box spans full width
-          }}
-        >
-          {/* Variable width box with TextField */}
-          <Box
-            sx={{
-              flexGrow: 1, // Allows it to grow and shrink
-              minWidth: 0, // Ensures proper resizing when space is limited
-            }}
-          >
-            <TextField
-              fullWidth // Ensures the TextField takes full width of the box
-              label="Command Line"
-              variant="outlined"
-              onChange={(event) => {
-                let value = event.target.value;
-                setCommand(value);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  queryDevice();
-                }
-              }}
-            />
-          </Box>
-
-          {/* Fixed width box with Button */}
-          <Box
-            sx={{
-              minWidth: 128,
-              flexShrink: 0, // Prevents shrinking
-            }}
-          >
-            <Button variant="contained" onClick={queryDevice} sx={{width:'100%', height:'100%'}}>Send</Button>
-          </Box>
-        </Box>
+        <ConsoleInputBar
+          onSubmit={queryDevice}
+        />
       </Box>
     </Box>
   );

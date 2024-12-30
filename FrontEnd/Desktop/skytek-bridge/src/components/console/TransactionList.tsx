@@ -2,6 +2,7 @@
 // Import React
 import React, { useEffect } from 'react';
 import Transaction, { DeviceTransaction } from './Transaction';
+import { Scrollbar } from 'react-scrollbars-custom';
 import { List } from '@mui/material';
 
 type TransactionListProps = {
@@ -21,13 +22,15 @@ const TransactionList = (props : TransactionListProps) => {
   }, [props.transactions.length, bottomRef]);
 
   // Return our list of transactions
-  return <List ref={listRef}>
-    {/* The content of this list, in this case all of the transactions that have happened */}
-    {props.transactions.map((transaction : DeviceTransaction<any, any>, index : number) => (
-      <Transaction key={index} transaction={transaction}/>
-    ))}
-    {/* Ref to the bottom of the list */}
-    <div ref={bottomRef} />
-  </List>
+  return <Scrollbar noScrollX={true} style={{ width: '100%', height: '100%' }}>
+    <List ref={listRef}>
+      {/* The content of this list, in this case all of the transactions that have happened */}
+      {props.transactions.map((transaction : DeviceTransaction<any, any>, index : number) => (
+        <Transaction key={index} transaction={transaction}/>
+      ))}
+      {/* Ref to the bottom of the list */}
+      <div ref={bottomRef} />
+    </List>
+  </Scrollbar>
 }
 export default TransactionList;
